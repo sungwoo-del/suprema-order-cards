@@ -51,7 +51,7 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
           <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-3', objectId: Number(d.id) }}>
             {d.dealname}
           </CrmActionLink>
-          <Link href={{ url: objUrl(portalId, '0-3', d.id), external: true }}>↗</Link>
+          <Link href={{ url: objUrl(portalId, '0-3', d.id), external: true }}>{ko ? '새 탭' : 'New tab'}</Link>
         </Flex>
         <Text variant="microcopy">{joinVals(d.pipelineLabel, d.stageLabel, d.ownerName, String(d.createdate || '').slice(0, 10))}</Text>
       </Flex>
@@ -156,7 +156,7 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
             ...c,
             action:
               c.key === 'lines' || c.key === 'zero' ? (
-                <Link href={{ url: editorUrl(portalId, dealId), external: true }}>{ko ? '라인아이템 편집 ↗' : 'Edit line items ↗'}</Link>
+                <Link href={{ url: editorUrl(portalId, dealId), external: true }}>{ko ? '라인아이템 편집' : 'Edit line items'}</Link>
               ) : c.key === 'buyer' || c.key === 'price' ? (
                 <Text variant="microcopy">{ko ? 'Order Info 탭에서 입력' : 'Set in Order Info tab'}</Text>
               ) : undefined,

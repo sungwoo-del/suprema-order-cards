@@ -3,7 +3,7 @@ import { hubspot } from '@hubspot/ui-extensions';
 
 // Lead → Opportunity 전환 카드 공용 (가운데 컬럼 · 사이드바)
 // deploy.sh가 배포할 때 CV_VERSION / CV_UPDATED 를 자동으로 올립니다.
-export const CV_VERSION = '06';
+export const CV_VERSION = '07';
 export const CV_UPDATED = '2026-11-27';
 export const CV_STAGE = 'Beta';
 export const PORTAL = 245822501;
@@ -60,7 +60,7 @@ export const T = {
     done: (n: string) => `The opportunity was created: ${n}.`,
     already: 'An opportunity was already created from this lead.',
     preview: 'Preview',
-    newTab: 'New tab ↗',
+    newTab: 'New tab',
     result: 'Copy result',
     rProps: 'Properties',
     rAssoc: 'Associations',
@@ -103,7 +103,7 @@ export const T = {
     done: (n: string) => `Opportunity를 만들었습니다 : ${n}.`,
     already: '이 Lead에서 만든 Opportunity가 있습니다.',
     preview: '미리보기',
-    newTab: '새 탭 ↗',
+    newTab: '새 탭',
     result: '복사 결과',
     rProps: '속성',
     rAssoc: '연결',

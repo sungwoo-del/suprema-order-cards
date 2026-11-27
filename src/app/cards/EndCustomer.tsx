@@ -118,7 +118,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
     </Modal>
   );
   const newTab = (type: string, id: string) => (
-    <Link href={{ url: objUrl(portalId, type, id), external: true }}>↗</Link>
+    <Link href={{ url: objUrl(portalId, type, id), external: true }}>{t.newTab}</Link>
   );
 
   return (

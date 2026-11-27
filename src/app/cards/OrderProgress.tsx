@@ -79,7 +79,7 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
         ...c,
         action:
           c.key === 'lines' || c.key === 'zero' ? (
-            <Link href={{ url: editorUrl(portalId, dealId), external: true }}>{ko ? '라인아이템 편집 ↗' : 'Edit line items ↗'}</Link>
+            <Link href={{ url: editorUrl(portalId, dealId), external: true }}>{ko ? '라인아이템 편집' : 'Edit line items'}</Link>
           ) : undefined,
       }))}
     />

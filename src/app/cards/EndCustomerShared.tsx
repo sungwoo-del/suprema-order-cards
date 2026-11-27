@@ -32,7 +32,7 @@ import { CrmActionButton } from '@hubspot/ui-extensions/crm';
 // End Customer(최종 고객사) 카드 공용 — 가운데 컬럼 카드 · 오른쪽 사이드바 카드가 함께 씀
 // 규칙 : 회사 1개 · 담당자 여러 명 · 둘 다 "End Customer" 연결 라벨
 // deploy.sh가 배포할 때 EC_VERSION / EC_UPDATED 를 자동으로 올립니다.
-export const EC_VERSION = '09';
+export const EC_VERSION = '10';
 export const EC_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const EC_STAGE = 'Beta';
@@ -139,7 +139,7 @@ export const T = {
     dupCompany: (n: string) => `A company with the same domain already exists: ${n}. It has been selected.`,
     dupContact: (n: string) => `A contact with the same email already exists: ${n}. It has been selected.`,
     preview: 'Preview',
-    newTab: 'New tab ↗',
+    newTab: 'New tab',
     change: 'Change',
     unlink: 'Unlink',
     addContact: '+ Add contact',
@@ -219,7 +219,7 @@ export const T = {
     dupCompany: (n: string) => `같은 도메인의 회사가 이미 있습니다 : ${n}. 기존 회사를 선택했습니다.`,
     dupContact: (n: string) => `같은 이메일의 담당자가 이미 있습니다 : ${n}. 기존 담당자를 선택했습니다.`,
     preview: '미리보기',
-    newTab: '새 탭 ↗',
+    newTab: '새 탭',
     change: '변경',
     unlink: '연결 해제',
     addContact: '+ 담당자 추가',

@@ -80,7 +80,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
             <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-3', objectId: Number(d.id) }}>
               {d.dealname}
             </CrmActionLink>
-            <Link href={{ url: objUrl(portalId, '0-3', d.id), external: true }}>↗</Link>
+            <Link href={{ url: objUrl(portalId, '0-3', d.id), external: true }}>{lang === 'ko' ? '새 탭' : 'New tab'}</Link>
           </Flex>
           <Text variant="microcopy">
             {joinVals(d.pipelineLabel, d.stageLabel, d.ownerName, String(d.createdate || '').slice(0, 10))}
