@@ -26,8 +26,10 @@ PO Registration(4400056046) → Under Review(4400056047) → Order Processing(44
 ## 신규 거래 속성 (11/27)
 order_review_status (Pending/Approved/Rejected) · order_review_note · order_reviewed_by · pi_status (Not issued/Issued/Buyer approved)
 
-## 결정 필요
-1. Order 생성 시 Opportunity 단계 자동 변경 여부(현재 변경 안 함)
-2. 검토 승인 권한 규칙(현재 팀 이름 기준 임시) — 실제 Leader 팀 확정 필요
-3. PI PDF 생성 방식(견적 · 문서 템플릿)
-4. Order 파이프라인 단계 수동 변경 제한(파이프라인 설정에서 편집 권한 제한 권장)
+## 결정 사항 (2026-11-27)
+- Order 생성 시 원본 Opportunity → Closed Won 자동 변경 (order.js createOrder)
+- 검토 승인 권한: 앱 설정 '주문 검토 승인 팀'(HubDB order_review_teams), 서버에서 사용자 팀을 검사. 현재 Suprema Admin, HubSpot Partner
+- 워크플로 W2~W6c, W8: 시작 조건 '파이프라인 = Opportunity' 추가·게시. W7·W7b(라인 항목 트리거)는 제외
+- PI: HubSpot 견적서 + PI 템플릿. 기존 'PROFORMA INVOICE[Sample]' 템플릿 확인됨(게시 상태)
+- Order 단계 수동 변경 제한: 사용자가 추후 적용
+- 기본·팀별 보기: 팀 화면 작업 때 적용
