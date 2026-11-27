@@ -318,7 +318,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
                   size="xs"
                   overlay={unlinkModal('company', co.id, co.name)}
                 >
-                  <IconText name="remove">{t.unlink}</IconText>
+                  <IconText name="remove">{t.unlinkBtn}</IconText>
                 </Button>
               </>
             }
@@ -366,7 +366,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
                       c.name || c.email || t.noName,
                     )}
                   >
-                    <IconText name="remove">{t.unlink}</IconText>
+                    <IconText name="remove">{t.unlinkBtn}</IconText>
                   </Button>
                 }
               />
