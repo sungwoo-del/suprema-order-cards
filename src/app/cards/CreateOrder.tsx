@@ -5,6 +5,7 @@ import {
   Flex,
   Input,
   Link,
+  LoadingButton,
   LoadingSpinner,
   Modal,
   ModalBody,
@@ -17,7 +18,7 @@ import {
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import { PORTAL, callOD, editorUrl, getLang, objUrl, odVersion, useOD } from './OrderShared.tsx';
-import { FooterLine, StatusRow, joinVals } from './UiKit.tsx';
+import { CheckList, FooterLine, StatusRow, joinVals, toast } from './UiKit.tsx';
 
 // Create Order (주문 생성) — Opportunity 가운데 카드 (Ver.01)
 // Order Confirm 단계 + 주문 조건 충족 → Order 파이프라인(PO Registration) 거래 생성
@@ -95,6 +96,7 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
     try {
       await callOD({ action: 'create_order', dealId, lang, dealname: name ?? `${data.dealname} - Order` });
       actions.closeOverlay(MODAL);
+      toast(actions, ko ? 'Order를 만들었습니다. Order 레코드에서 검토를 요청하세요.' : 'The order was created. Request review on the order record.');
       await load();
       notify();
     } catch (e) {
@@ -120,9 +122,9 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
         </Flex>
       </ModalBody>
       <ModalFooter>
-        <Button variant="primary" disabled={busy || !(name ?? data.dealname)} onClick={create}>
-          {busy ? (ko ? '만드는 중입니다...' : 'Creating...') : ko ? 'Order 만들기' : 'Create order'}
-        </Button>
+        <LoadingButton variant="primary" loading={busy} disabled={!(name ?? data.dealname)} onClick={create}>
+          {ko ? 'Order 만들기' : 'Create order'}
+        </LoadingButton>
         <Button onClick={() => actions.closeOverlay(MODAL)}>{ko ? '취소' : 'Cancel'}</Button>
       </ModalFooter>
     </Modal>
@@ -148,19 +150,18 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
           <StatisticsItem label={ko ? '금액' : 'Amount'} number={data.amount} />
         </Statistics>
       ) : (
-        <Flex direction="column" gap="extra-small">
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {data.checks.map((c: any) => (
-            <Flex key={c.key} direction="row" gap="small" align="center" justify="between">
-              <Text format={c.ok ? undefined : { fontWeight: 'demibold' }}>{`${c.ok ? '✓' : '○'}  ${c.text}`}</Text>
-              {!c.ok && (c.key === 'lines' || c.key === 'zero') ? (
+        <CheckList
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          items={data.checks.map((c: any) => ({
+            ...c,
+            action:
+              c.key === 'lines' || c.key === 'zero' ? (
                 <Link href={{ url: editorUrl(portalId, dealId), external: true }}>{ko ? '라인아이템 편집 ↗' : 'Edit line items ↗'}</Link>
-              ) : !c.ok && (c.key === 'buyer' || c.key === 'price') ? (
-                <Text variant="microcopy">{ko ? 'Order Info 탭' : 'Order Info tab'}</Text>
-              ) : null}
-            </Flex>
-          ))}
-        </Flex>
+              ) : c.key === 'buyer' || c.key === 'price' ? (
+                <Text variant="microcopy">{ko ? 'Order Info 탭에서 입력' : 'Set in Order Info tab'}</Text>
+              ) : undefined,
+          }))}
+        />
       )}
       <Flex direction="row" gap="small" align="center" wrap="wrap">
         <Button variant="primary" disabled={!data.ready} overlay={modal}>

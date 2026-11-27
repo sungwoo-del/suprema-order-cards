@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import {
   Alert,
-  Button,
+  DescriptionList,
+  DescriptionListItem,
   Flex,
   Link,
+  LoadingButton,
   LoadingSpinner,
   Statistics,
   StatisticsItem,
@@ -13,7 +15,7 @@ import {
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import { PORTAL, callOD, editorUrl, getLang, isApprover, objUrl, odVersion, useOD, userName } from './OrderShared.tsx';
-import { FooterLine, StatusRow, TagVariant, joinVals } from './UiKit.tsx';
+import { CheckList, FooterLine, Progress, StatusRow, TagVariant, joinVals, toast } from './UiKit.tsx';
 
 // Order Progress (주문 진행) — Order 가운데 카드 (Ver.01)
 // 단계별 진입 조건 검사 + 동작 : 검토 요청 → 승인/반려 → PI 발행 → 구매자 승인 → (ERP 자동)
@@ -27,20 +29,6 @@ const TAG: Record<string, [string, string, TagVariant]> = {
   dispatched: ['Dispatched', '출고', 'info'],
   closed: ['Closed', '종료', 'success'],
   lost: ['Closed lost', '취소', 'error'],
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const Steps = ({ stages, current }: { stages: any[]; current: string }) => {
-  const idx = stages.findIndex((s) => s.key === current);
-  return (
-    <Flex direction="row" gap="small" align="center" wrap="wrap">
-      {stages.map((s, i) => (
-        <Text key={s.key} variant="microcopy" format={i === idx ? { fontWeight: 'bold' } : undefined}>
-          {`${i < idx ? '✓' : i === idx ? '●' : '○'} ${s.label}${i < stages.length - 1 ? '  →' : ''}`}
-        </Text>
-      ))}
-    </Flex>
-  );
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,12 +56,13 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
       </Flex>
     );
 
-  const run = async (key: string, params: Record<string, unknown>) => {
+  const run = async (key: string, params: Record<string, unknown>, done: string) => {
     setBusy(key);
     setErr('');
     try {
       await callOD({ dealId, lang, ...params });
       setNote('');
+      toast(actions, done);
       await load();
       notify();
     } catch (e) {
@@ -83,15 +72,18 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
   };
   const cur = data.current as string;
   const [en, kr, variant] = TAG[cur] || ['--', '--', 'default'];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const checkList = (data.checks || []).map((c: any) => (
-    <Flex key={c.key} direction="row" gap="small" align="center" justify="between">
-      <Text format={c.ok ? undefined : { fontWeight: 'demibold' }}>{`${c.ok ? '✓' : '○'}  ${c.text}`}</Text>
-      {!c.ok && (c.key === 'lines' || c.key === 'zero') ? (
-        <Link href={{ url: editorUrl(portalId, dealId), external: true }}>{ko ? '라인아이템 편집 ↗' : 'Edit line items ↗'}</Link>
-      ) : null}
-    </Flex>
-  ));
+  const checkList = (
+    <CheckList
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      items={(data.checks || []).map((c: any) => ({
+        ...c,
+        action:
+          c.key === 'lines' || c.key === 'zero' ? (
+            <Link href={{ url: editorUrl(portalId, dealId), external: true }}>{ko ? '라인아이템 편집 ↗' : 'Edit line items ↗'}</Link>
+          ) : undefined,
+      }))}
+    />
+  );
   const reviewLine = data.review.status
     ? joinVals(
         data.review.status === 'approved' ? (ko ? '검토 승인' : 'Approved') : data.review.status === 'rejected' ? (ko ? '검토 반려' : 'Rejected') : ko ? '검토 대기' : 'Pending',
@@ -107,11 +99,11 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
       : ko ? '필요한 조치 : 조건을 확인하고 검토를 요청하세요.' : 'Action required: check the conditions and request review.';
     body = (
       <>
-        <Flex direction="column" gap="extra-small">{checkList}</Flex>
+        {checkList}
         <Flex direction="row" gap="small">
-          <Button variant="primary" disabled={!data.ready || !!busy} onClick={() => run('req', { action: 'request_review' })}>
-            {busy === 'req' ? (ko ? '처리 중입니다...' : 'Working...') : ko ? '검토 요청' : 'Request review'}
-          </Button>
+          <LoadingButton variant="primary" loading={busy === 'req'} disabled={!data.ready || !!busy} onClick={() => run('req', { action: 'request_review' }, ko ? '검토를 요청했습니다. Under Review로 이동했습니다.' : 'Review requested. Moved to Under Review.')}>
+            {ko ? '검토 요청' : 'Request review'}
+          </LoadingButton>
         </Flex>
       </>
     );
@@ -123,12 +115,12 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
       <>
         <TextArea name="od_note" label={ko ? '검토 의견 (반려 시 필수)' : 'Review note (required to reject)'} value={note} onChange={(v: string) => setNote(v)} />
         <Flex direction="row" gap="small">
-          <Button variant="primary" disabled={!!busy} onClick={() => run('ok', { action: 'review', decision: 'approve', note, approver, userName: userName(context) })}>
-            {busy === 'ok' ? (ko ? '처리 중입니다...' : 'Working...') : ko ? '승인' : 'Approve'}
-          </Button>
-          <Button disabled={!!busy || !note.trim()} onClick={() => run('no', { action: 'review', decision: 'reject', note, approver, userName: userName(context) })}>
+          <LoadingButton variant="primary" loading={busy === 'ok'} disabled={!!busy} onClick={() => run('ok', { action: 'review', decision: 'approve', note, approver, userName: userName(context) }, ko ? '승인했습니다. Order Processing으로 이동했습니다.' : 'Approved. Moved to Order Processing.')}>
+            {ko ? '승인' : 'Approve'}
+          </LoadingButton>
+          <LoadingButton loading={busy === 'no'} disabled={!!busy || !note.trim()} onClick={() => run('no', { action: 'review', decision: 'reject', note, approver, userName: userName(context) }, ko ? '반려했습니다. PO Registration으로 되돌렸습니다.' : 'Rejected. Moved back to PO Registration.')}>
             {ko ? '반려' : 'Reject'}
-          </Button>
+          </LoadingButton>
         </Flex>
       </>
     ) : (
@@ -141,19 +133,21 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
       : ko ? '필요한 조치 : PI를 발행하세요.' : 'Action required: issue the PI.';
     body = (
       <>
-        <Flex direction="column" gap="extra-small">
-          <Text>{`${issued ? '✓' : '○'}  ${ko ? 'PI 발행' : 'PI issued'}`}</Text>
-          <Text>{`○  ${ko ? '구매자 PI 승인' : 'Buyer approved PI'}`}</Text>
-        </Flex>
+        <CheckList
+          items={[
+            { key: 'pi', ok: issued, text: ko ? 'PI 발행' : 'PI issued' },
+            { key: 'buyer', ok: false, text: ko ? '구매자 PI 승인' : 'Buyer approved PI' },
+          ]}
+        />
         <Flex direction="row" gap="small" align="center" wrap="wrap">
           {issued ? (
-            <Button variant="primary" disabled={!!busy} onClick={() => run('pa', { action: 'pi', step: 'approve' })}>
+            <LoadingButton variant="primary" loading={busy === 'pa'} disabled={!!busy} onClick={() => run('pa', { action: 'pi', step: 'approve' }, ko ? '구매자 승인을 기록했습니다. Order Confirming으로 이동했습니다.' : 'Buyer approval recorded. Moved to Order Confirming.')}>
               {ko ? '구매자 승인 처리' : 'Buyer approved'}
-            </Button>
+            </LoadingButton>
           ) : (
-            <Button variant="primary" disabled={!!busy} onClick={() => run('pi', { action: 'pi', step: 'issue' })}>
+            <LoadingButton variant="primary" loading={busy === 'pi'} disabled={!!busy} onClick={() => run('pi', { action: 'pi', step: 'issue' }, ko ? 'PI 발행을 기록했습니다.' : 'PI issue recorded.')}>
               {ko ? 'PI 발행 처리' : 'Mark PI issued'}
-            </Button>
+            </LoadingButton>
           )}
           <Text variant="microcopy">{ko ? 'ⓘ PI PDF 생성은 다음 단계에서 연결됩니다.' : 'ⓘ PI PDF generation will be connected later.'}</Text>
         </Flex>
@@ -176,26 +170,37 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
   return (
     <Flex direction="column" gap="medium">
       <StatusRow label={ko ? kr : en} variant={variant} text={`${ko ? '현재 단계' : 'Stage'} : ${data.stageLabel}`} />
-      <Steps stages={data.stages} current={cur} />
+      {cur !== 'lost' ? (
+        <Progress
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          steps={data.stages.map((x: any) => x.label)}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          current={data.stages.findIndex((x: any) => x.key === cur)}
+        />
+      ) : null}
       {err ? <Alert title={ko ? '오류' : 'Error'} variant="danger">{err}</Alert> : null}
       <Text variant="microcopy">{text}</Text>
       {body}
-      <Text variant="microcopy">
-        {joinVals(
-          `${ko ? '금액' : 'Amount'} ${data.amount}`,
-          data.confirmed && `${ko ? 'PI 확정' : 'PI confirmed'} ${data.confirmed}`,
-          reviewLine,
-          data.erp.branch && `ERP - Order Branch ${data.erp.branch}`,
-        )}
-      </Text>
-      {data.source ? (
-        <Flex direction="row" gap="small" align="center">
-          <Text variant="microcopy">{ko ? '원본 Opportunity' : 'Source opportunity'}</Text>
-          <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-3', objectId: Number(data.source.id) }}>
-            {data.source.dealname}
-          </CrmActionLink>
-        </Flex>
-      ) : null}
+      <DescriptionList direction="row">
+        <DescriptionListItem label={ko ? '금액' : 'Amount'}>
+          <Text>{data.amount}</Text>
+        </DescriptionListItem>
+        <DescriptionListItem label={ko ? '검토' : 'Review'}>
+          <Text>{reviewLine || '--'}</Text>
+        </DescriptionListItem>
+        <DescriptionListItem label={ko ? 'PI 확정 금액' : 'PI confirmed'}>
+          <Text>{data.confirmed || '--'}</Text>
+        </DescriptionListItem>
+        <DescriptionListItem label={ko ? '원본 Opportunity' : 'Source opportunity'}>
+          {data.source ? (
+            <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-3', objectId: Number(data.source.id) }}>
+              {data.source.dealname}
+            </CrmActionLink>
+          ) : (
+            <Text>--</Text>
+          )}
+        </DescriptionListItem>
+      </DescriptionList>
       {footer}
     </Flex>
   );

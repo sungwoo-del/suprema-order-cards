@@ -12,7 +12,7 @@ import {
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import { Editor, PORTAL, T, ecVersion, getLang, objUrl, useEC } from './EndCustomerShared.tsx';
-import { FooterLine, StatusRow, joinVals } from './UiKit.tsx';
+import { FooterLine, StatusRow, joinVals, toast } from './UiKit.tsx';
 
 // End Customer(최종 고객사) — 오른쪽 사이드바 (Ver.04 개편)
 // 1열 · 표 없음 · 편집/연결은 Panel (G7)
@@ -51,6 +51,7 @@ const EndCustomerSide = ({ context, actions }: { context: any; actions: any }) =
               setData(d);
               actions.closeOverlay(PANEL);
               notify();
+              toast(actions, lang === 'ko' ? '최종 고객사를 저장했습니다.' : 'The end customer was saved.');
             }}
             onCancel={() => actions.closeOverlay(PANEL)}
           />

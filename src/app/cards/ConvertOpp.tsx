@@ -8,6 +8,7 @@ import {
   Flex,
   Input,
   Link,
+  LoadingButton,
   LoadingSpinner,
   Modal,
   ModalBody,
@@ -26,7 +27,7 @@ import {
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import { PORTAL, T, callCV, cvVersion, getLang, objUrl, useCV } from './ConvertShared.tsx';
-import { FooterLine, StatusRow, joinVals } from './UiKit.tsx';
+import { FooterLine, Progress, StatusRow, joinVals, toast } from './UiKit.tsx';
 
 // Lead(Partner) → Opportunity 전환 — 가운데 컬럼 카드 (Ver.04 개편 · docs/05_UI_UX_지침.md)
 // 상태 : 대기 → 가능 → 완료 / Opportunity 화면에서는 원본 Lead
@@ -42,17 +43,6 @@ const toDateObj = (s: string) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fromDateObj = (d: any) =>
   d ? `${d.year}-${String(d.month + 1).padStart(2, '0')}-${String(d.date).padStart(2, '0')}` : '';
-
-// 3단계 진행 (Lead → Converted → Opportunity)
-const Steps = ({ cur, labels }: { cur: number; labels: string[] }) => (
-  <Flex direction="row" gap="small" align="center" wrap="wrap">
-    {labels.map((s, i) => (
-      <Text key={s} variant="microcopy" format={i === cur ? { fontWeight: 'bold' } : undefined}>
-        {`${i < cur ? '✓' : i === cur ? '●' : '○'} ${s}${i < labels.length - 1 ? '  →' : ''}`}
-      </Text>
-    ))}
-  </Flex>
-);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
@@ -129,6 +119,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
     try {
       const r = await callCV({ action: 'relink', dealId, lang });
       setResult({ ...(result || {}), ...r.result, props: result?.props ?? 0 });
+      toast(actions, ko ? '활동 기록과 연결을 다시 연결했습니다.' : 'Activities and associations were linked again.');
     } catch (e) {
       setErr((e as Error).message);
     }
@@ -141,7 +132,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
     return (
       <Flex direction="column" gap="medium">
         <StatusRow label={ko ? '전환 완료' : 'Converted'} variant="success" text={result ? t.done(ex.dealname) : t.already} />
-        <Steps cur={2} labels={stepLabels} />
+        <Progress steps={stepLabels} current={2} />
         {err ? <Alert title={t.error} variant="danger">{err}</Alert> : null}
         {dealTile(
           ex,
@@ -176,7 +167,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
     return (
       <Flex direction="column" gap="small">
         <StatusRow label={ko ? '전환 대기' : 'Waiting'} text={`${ko ? '현재 단계' : 'Current stage'} : ${stage || '--'}`} />
-        <Steps cur={0} labels={stepLabels} />
+        <Progress steps={stepLabels} current={0} />
         <Text variant="microcopy">{t.notStage(trig)}</Text>
         {footer}
       </Flex>
@@ -196,6 +187,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
       });
       setResult(r.result);
       actions.closeOverlay(MODAL);
+      toast(actions, t.done(r.dealname || name || data.dealname));
       await load();
       try {
         actions.refreshObjectProperties();
@@ -231,9 +223,9 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
         </Flex>
       </ModalBody>
       <ModalFooter>
-        <Button variant="primary" disabled={busy || !(name ?? data.dealname)} onClick={create}>
-          {busy ? t.creating : t.create}
-        </Button>
+        <LoadingButton variant="primary" loading={busy} disabled={!(name ?? data.dealname)} onClick={create}>
+          {t.create}
+        </LoadingButton>
         <Button onClick={() => actions.closeOverlay(MODAL)}>{t.cancel}</Button>
       </ModalFooter>
     </Modal>
@@ -248,7 +240,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
         variant={data.hasOwner ? 'info' : 'warning'}
         text={data.hasOwner ? (ko ? 'Lead 정보로 Opportunity 거래를 만듭니다.' : 'Creates an opportunity deal from this lead.') : t.noOwner}
       />
-      <Steps cur={1} labels={stepLabels} />
+      <Progress steps={stepLabels} current={1} />
       {err ? <Alert title={t.error} variant="danger">{err}</Alert> : null}
       <Statistics>
         <StatisticsItem label={ko ? '복사 속성' : 'Properties'} number={String((data.props || []).length)} />

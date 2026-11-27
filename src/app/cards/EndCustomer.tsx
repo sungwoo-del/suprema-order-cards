@@ -21,7 +21,7 @@ import {
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import { Editor, PORTAL, T, callEC, ecVersion, getLang, objUrl, useEC, webUrl } from './EndCustomerShared.tsx';
-import { FooterLine, SectionHead, StatusRow, joinVals } from './UiKit.tsx';
+import { FooterLine, SectionHead, StatusRow, joinVals, toast } from './UiKit.tsx';
 
 // End Customer(최종 고객사) — 가운데 컬럼 카드 (Ver.04 개편 · docs/05_UI_UX_지침.md)
 // 상태 줄 → 회사 타일 → 담당자 표 → 하단 1줄. 편집은 같은 카드 안에서 한 화면.
@@ -39,6 +39,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
   const portalId = context?.portal?.id ?? PORTAL;
   const { data, setData, error, load, notify } = useEC(dealId, lang, actions);
   const [editing, setEditing] = useState(false);
+  const [changeCompany, setChangeCompany] = useState(false);
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
 
@@ -76,9 +77,12 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
           onSaved={(d) => {
             setData(d);
             setEditing(false);
+            setChangeCompany(false);
             notify();
+            toast(actions, lang === 'ko' ? '최종 고객사를 저장했습니다.' : 'The end customer was saved.');
           }}
-          onCancel={editing ? () => setEditing(false) : undefined}
+          openSearch={changeCompany}
+          onCancel={editing ? () => { setEditing(false); setChangeCompany(false); } : undefined}
         />
         {footer}
       </Flex>
@@ -90,6 +94,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
     try {
       setData(await callEC({ action: 'unlink', dealId, lang, kind, id }));
       notify();
+      toast(actions, lang === 'ko' ? '연결을 해제했습니다.' : 'The link was removed.');
     } catch (e) {
       setErr((e as Error).message);
     }
@@ -149,7 +154,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
               ) : null}
             </Flex>
             <Dropdown buttonText={t.more} buttonSize="xs" variant="secondary">
-              <Dropdown.ButtonItem onClick={() => setEditing(true)}>{t.changeCompany}</Dropdown.ButtonItem>
+              <Dropdown.ButtonItem onClick={() => { setChangeCompany(true); setEditing(true); }}>{t.changeCompany}</Dropdown.ButtonItem>
               <Dropdown.ButtonItem overlay={unlinkModal('company', co.id, co.name)}>{t.unlink}</Dropdown.ButtonItem>
             </Dropdown>
           </Flex>

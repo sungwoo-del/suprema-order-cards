@@ -10,6 +10,7 @@ import {
   Flex,
   Input,
   Link,
+  LoadingButton,
   LoadingSpinner,
   SearchInput,
   Select,
@@ -24,7 +25,7 @@ import { CrmActionButton } from '@hubspot/ui-extensions/crm';
 // End Customer(최종 고객사) 카드 공용 — 가운데 컬럼 카드 · 오른쪽 사이드바 카드가 함께 씀
 // 규칙 : 회사 1개 · 담당자 여러 명 · 둘 다 "End Customer" 연결 라벨
 // deploy.sh가 배포할 때 EC_VERSION / EC_UPDATED 를 자동으로 올립니다.
-export const EC_VERSION = '04';
+export const EC_VERSION = '05';
 export const EC_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const EC_STAGE = 'Beta';
@@ -285,6 +286,7 @@ export const Editor = ({
   onSaved,
   onCancel,
   compact,
+  openSearch,
 }: {
   lang: Lang;
   dealId: string;
@@ -292,13 +294,14 @@ export const Editor = ({
   onSaved: (d: EcData) => void;
   onCancel?: () => void;
   compact?: boolean;
+  openSearch?: boolean;
 }) => {
   const t = T[lang];
   const [company, setCompany] = useState<Company | null>(data.company);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Company[] | null>(null);
   // 회사 검색 목록은 회사가 없을 때나 [변경]을 눌렀을 때만 펼침
-  const [searchOpen, setSearchOpen] = useState(!data.company);
+  const [searchOpen, setSearchOpen] = useState(!data.company || !!openSearch);
   const [searching, setSearching] = useState(false);
   const [list, setList] = useState<Contact[] | null>(null);
   const [checked, setChecked] = useState<string[]>(data.contacts.map((c) => c.id));
@@ -549,9 +552,9 @@ export const Editor = ({
       {mode === 'contact' ? contactForm : null}
       <Divider />
       <Flex direction="row" gap="small" align="center" wrap="wrap">
-        <Button variant="primary" disabled={busy || !dirty} onClick={save}>
-          {busy ? t.saving : t.saveN(company ? 1 : 0, checked.length)}
-        </Button>
+        <LoadingButton variant="primary" loading={busy} disabled={!dirty} onClick={save}>
+          {t.saveN(company ? 1 : 0, checked.length)}
+        </LoadingButton>
         {onCancel ? <Button onClick={onCancel}>{t.cancel}</Button> : null}
       </Flex>
       <Text variant="microcopy">ⓘ {t.saveHint}</Text>

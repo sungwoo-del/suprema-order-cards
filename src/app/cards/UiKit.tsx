@@ -1,11 +1,18 @@
 import React from 'react';
-import { Box, Divider, Flex, Link, Tag, Text } from '@hubspot/ui-extensions';
+import { Box, Divider, Flex, Icon, Link, StatusTag, StepIndicator, Text } from '@hubspot/ui-extensions';
 
-// 앱카드 공통 UI — docs/05_UI_UX_지침.md (G1 구조 · G4 상태)
-// 맨 위 상태 줄 : 상태 태그 1개 + 한 줄 설명 + (오른쪽) 머리글 동작
-// 맨 아래 한 줄 : 버전 · 새로고침
+// 앱카드 공통 UI — docs/05_UI_UX_지침.md
+// G1 구조 : 맨 위 상태 줄(StatusTag + 한 줄) · 맨 아래 버전·새로고침 1줄
+// G4 상태 : HubSpot 기본 상태 표시(StatusTag) · 진행은 기본 StepIndicator
 
 export type TagVariant = 'default' | 'success' | 'warning' | 'error' | 'info';
+const STATUS: Record<TagVariant, 'default' | 'success' | 'warning' | 'danger' | 'info'> = {
+  default: 'default',
+  success: 'success',
+  warning: 'warning',
+  error: 'danger',
+  info: 'info',
+};
 
 export const StatusRow = ({
   label,
@@ -21,11 +28,37 @@ export const StatusRow = ({
   <Flex direction="row" justify="between" align="center" gap="small">
     <Box flex={1}>
       <Flex direction="row" gap="small" align="center" wrap="wrap">
-        <Tag variant={variant}>{label}</Tag>
+        <StatusTag variant={STATUS[variant]}>{label}</StatusTag>
         {text ? <Text variant="microcopy">{text}</Text> : null}
       </Flex>
     </Box>
     {action ? <Box flex="none">{action}</Box> : null}
+  </Flex>
+);
+
+// 단계 진행 — HubSpot 기본 StepIndicator (단계 많으면 compact)
+export const Progress = ({ steps, current }: { steps: string[]; current: number }) => (
+  <StepIndicator stepNames={steps} currentStep={Math.max(0, current)} variant={steps.length > 4 ? 'compact' : 'default'} />
+);
+
+// 조건 목록 — 충족(초록 체크) / 미충족(빈 원 + 굵게 + 조치)
+export interface CheckItem {
+  key: string;
+  ok: boolean;
+  text: string;
+  action?: React.ReactNode;
+}
+export const CheckList = ({ items }: { items: CheckItem[] }) => (
+  <Flex direction="column" gap="extra-small">
+    {items.map((c) => (
+      <Flex key={c.key} direction="row" gap="small" align="center" justify="between">
+        <Flex direction="row" gap="small" align="center">
+          <Icon name={c.ok ? 'checkCircle' : 'circleHollow'} color={c.ok ? 'success' : 'inherit'} size="sm" />
+          <Text format={c.ok ? undefined : { fontWeight: 'demibold' }}>{c.text}</Text>
+        </Flex>
+        {!c.ok && c.action ? <Box flex="none">{c.action}</Box> : null}
+      </Flex>
+    ))}
   </Flex>
 );
 
@@ -64,3 +97,13 @@ export const SectionHead = ({ title, action }: { title: string; action?: React.R
 // 값 있는 것만 " · "로 이음 (G2 빈 값 숨김)
 export const joinVals = (...v: (string | undefined | null | false)[]) =>
   v.filter((x) => x && String(x).trim()).join(' · ');
+
+// 저장·생성 결과 알림 (상단 토스트, G4)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const toast = (actions: any, message: string, type: 'success' | 'warning' | 'danger' = 'success') => {
+  try {
+    actions?.addAlert?.({ type, message });
+  } catch (e) {
+    /* 무시 */
+  }
+};
