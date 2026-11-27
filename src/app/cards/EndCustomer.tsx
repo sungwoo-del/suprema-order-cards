@@ -29,7 +29,6 @@ import {
   PORTAL,
   T,
   callEC,
-  ecVersion,
   getLang,
   objUrl,
   useEC,
@@ -37,12 +36,12 @@ import {
 } from './EndCustomerShared.tsx';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import {
-  FooterLine,
   SectionHead,
   StatusRow,
   joinVals,
   toast,
   IconText,
+  RefreshLink,
 } from './UiKit.tsx';
 
 // End Customer(최종 고객사) — 가운데 컬럼 카드 (Ver.04 개편 · docs/05_UI_UX_지침.md)
@@ -132,16 +131,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
 
-  const footer = (
-    <FooterLine
-      version={ecVersion()}
-      refreshLabel={t.refresh}
-      onRefresh={() => {
-        load();
-      }}
-      href={objUrl(portalId, '0-3', dealId)}
-    />
-  );
+  const rf = <RefreshLink label={t.refresh} href={objUrl(portalId, '0-3', dealId)} onRefresh={load} />;
   if (error)
     return (
       <Alert title={t.error} variant="danger">
@@ -154,7 +144,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
   const n = data.contacts.length;
   const empty = !co && !n;
   const status = (
-    <StatusRow
+    <StatusRow refresh={rf}
       label={empty ? t.notLinked : t.linked}
       variant={empty ? 'warning' : 'success'}
       text={empty ? t.emptyLine : t.counts(co ? 1 : 0, n)}
@@ -191,7 +181,6 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
               : undefined
           }
         />
-        {footer}
       </Flex>
     );
 
@@ -379,7 +368,6 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
           <Text variant="microcopy">ⓘ {t.noContactLinked}</Text>
         )}
       </Flex>
-      {footer}
     </Flex>
   );
 };

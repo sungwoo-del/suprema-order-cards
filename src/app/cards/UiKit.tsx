@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Divider, Flex, Icon, Link, StatusTag, StepIndicator, Text } from '@hubspot/ui-extensions';
 
 // 앱카드 공통 UI — docs/05_UI_UX_지침.md
-// G1 구조 : 맨 위 상태 줄(StatusTag + 한 줄) · 맨 아래 버전·새로고침 1줄
+// G1 구조 : 맨 위 상태 줄(StatusTag + 한 줄 + 오른쪽 끝 새로고침) · 하단 버전은 HubSpot '구동됨' 표기
 // G4 상태 : HubSpot 기본 상태 표시(StatusTag) · 진행은 기본 StepIndicator
 
 export type TagVariant = 'default' | 'success' | 'warning' | 'error' | 'info';
@@ -19,11 +19,13 @@ export const StatusRow = ({
   variant = 'default',
   text,
   action,
+  refresh,
 }: {
   label: string;
   variant?: TagVariant;
   text?: React.ReactNode;
   action?: React.ReactNode;
+  refresh?: React.ReactNode;
 }) => (
   <Flex direction="row" justify="between" align="center" gap="small">
     <Box flex={1}>
@@ -33,6 +35,23 @@ export const StatusRow = ({
       </Flex>
     </Box>
     {action ? <Box flex="none">{action}</Box> : null}
+    {refresh ? <Box flex="none">{refresh}</Box> : null}
+  </Flex>
+);
+
+// 카드 맨 위 줄 — 내용 + 오른쪽 끝 새로고침 아이콘
+export const TopRow = ({
+  refresh,
+  children,
+  align = 'start',
+}: {
+  refresh: React.ReactNode;
+  children: React.ReactNode;
+  align?: 'start' | 'center';
+}) => (
+  <Flex direction="row" justify="between" align={align} gap="small">
+    <Box flex={1}>{children}</Box>
+    <Box flex="none">{refresh}</Box>
   </Flex>
 );
 

@@ -15,8 +15,8 @@ import {
   hubspot,
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
-import { PORTAL, callOD, editorUrl, getLang, objUrl, odVersion, useOD, userName } from './OrderShared.tsx';
-import { IconText, CheckList, FooterLine, Progress, StatusRow, TagVariant, joinVals, toast } from './UiKit.tsx';
+import { PORTAL, callOD, editorUrl, getLang, objUrl, useOD, userName } from './OrderShared.tsx';
+import { IconText, CheckList, Progress, StatusRow, TagVariant, joinVals, toast, RefreshLink } from './UiKit.tsx';
 
 // Order Progress (주문 진행) — Order 가운데 카드 (Ver.01)
 // 단계별 진입 조건 검사 + 동작 : 검토 요청 → 승인/반려 → PI 발행 → 구매자 승인 → (ERP 자동)
@@ -45,14 +45,11 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
 
   if (error) return <Alert title={ko ? '오류' : 'Error'} variant="danger">{error}</Alert>;
   if (!data) return <LoadingSpinner label={ko ? '불러오는 중입니다...' : 'Loading...'} />;
-  const footer = (
-    <FooterLine version={odVersion()} refreshLabel={ko ? '새로고침' : 'Refresh'} onRefresh={load} href={objUrl(portalId, '0-3', dealId)} />
-  );
+  const rf = <RefreshLink label={ko ? '새로고침' : 'Refresh'} href={objUrl(portalId, '0-3', dealId)} onRefresh={load} />;
   if (data.mode !== 'order')
     return (
       <Flex direction="column" gap="small">
-        <StatusRow label={ko ? '해당 없음' : 'Not applicable'} text={ko ? 'Order 파이프라인 거래에서만 사용합니다.' : 'Used only for order pipeline deals.'} />
-        {footer}
+        <StatusRow refresh={rf} label={ko ? '해당 없음' : 'Not applicable'} text={ko ? 'Order 파이프라인 거래에서만 사용합니다.' : 'Used only for order pipeline deals.'} />
       </Flex>
     );
 
@@ -215,7 +212,7 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
 
   return (
     <Flex direction="column" gap="medium">
-      <StatusRow label={ko ? kr : en} variant={variant} text={`${ko ? '현재 단계' : 'Stage'} : ${data.stageLabel}`} />
+      <StatusRow refresh={rf} label={ko ? kr : en} variant={variant} text={`${ko ? '현재 단계' : 'Stage'} : ${data.stageLabel}`} />
       {cur !== 'lost' ? (
         <Progress
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -247,7 +244,6 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
           )}
         </DescriptionListItem>
       </DescriptionList>
-      {footer}
     </Flex>
   );
 };

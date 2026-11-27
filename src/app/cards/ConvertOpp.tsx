@@ -26,8 +26,8 @@ import {
   hubspot,
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
-import { PORTAL, T, callCV, cvVersion, getLang, objUrl, useCV } from './ConvertShared.tsx';
-import { IconText, FooterLine, Progress, StatusRow, joinVals, toast } from './UiKit.tsx';
+import { PORTAL, T, callCV, getLang, objUrl, useCV } from './ConvertShared.tsx';
+import { IconText, Progress, StatusRow, joinVals, toast, RefreshLink } from './UiKit.tsx';
 
 // Lead(Partner) → Opportunity 전환 — 가운데 컬럼 카드 (Ver.04 개편 · docs/05_UI_UX_지침.md)
 // 상태 : 대기 → 가능 → 완료 / Opportunity 화면에서는 원본 Lead
@@ -67,9 +67,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
     );
   if (!data) return <LoadingSpinner label={t.loading} />;
 
-  const footer = (
-    <FooterLine version={cvVersion()} refreshLabel={t.refresh} onRefresh={load} href={objUrl(portalId, '0-3', dealId)} />
-  );
+  const rf = <RefreshLink label={t.refresh} href={objUrl(portalId, '0-3', dealId)} onRefresh={load} />;
   const stepLabels = ['Lead', data.triggerLabels[0] || 'Converted', data.target?.pipeline || 'Opportunity'];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dealTile = (d: any, menu?: React.ReactNode) => (
@@ -96,18 +94,16 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
     if (data.inTarget && data.origin)
       return (
         <Flex direction="column" gap="medium">
-          <StatusRow label={ko ? '원본 Lead' : 'Source lead'} variant="info" text={ko ? '이 거래는 Lead에서 전환되었습니다.' : 'This deal was converted from a lead.'} />
+          <StatusRow refresh={rf} label={ko ? '원본 Lead' : 'Source lead'} variant="info" text={ko ? '이 거래는 Lead에서 전환되었습니다.' : 'This deal was converted from a lead.'} />
           {dealTile(data.origin)}
-          {footer}
         </Flex>
       );
     return (
       <Flex direction="column" gap="small">
-        <StatusRow
+        <StatusRow refresh={rf}
           label={ko ? '해당 없음' : 'Not applicable'}
           text={data.inTarget ? (ko ? '원본 Lead가 없습니다 (직접 만든 거래).' : 'There is no source lead (created directly).') : t.notSource}
         />
-        {footer}
       </Flex>
     );
   }
@@ -131,7 +127,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
     const failed = result && (result.assoc.failed || result.acts.failed || (result.lines && result.lines.failed));
     return (
       <Flex direction="column" gap="medium">
-        <StatusRow label={ko ? '전환 완료' : 'Converted'} variant="success" text={result ? t.done(ex.dealname) : t.already} />
+        <StatusRow refresh={rf} label={ko ? '전환 완료' : 'Converted'} variant="success" text={result ? t.done(ex.dealname) : t.already} />
         <Progress steps={stepLabels} current={2} />
         {err ? <Alert title={t.error} variant="danger">{err}</Alert> : null}
         {dealTile(
@@ -153,7 +149,6 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
             {t.partial}
           </Alert>
         ) : null}
-        {footer}
       </Flex>
     );
   }
@@ -166,10 +161,9 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
   if (!data.active)
     return (
       <Flex direction="column" gap="small">
-        <StatusRow label={ko ? '전환 대기' : 'Waiting'} text={`${ko ? '현재 단계' : 'Current stage'} : ${stage || '--'}`} />
+        <StatusRow refresh={rf} label={ko ? '전환 대기' : 'Waiting'} text={`${ko ? '현재 단계' : 'Current stage'} : ${stage || '--'}`} />
         <Progress steps={stepLabels} current={0} />
         <Text variant="microcopy">{t.notStage(trig)}</Text>
-        {footer}
       </Flex>
     );
 
@@ -235,7 +229,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
   const assoc = (data.assoc || []).filter((a: any) => !a.error);
   return (
     <Flex direction="column" gap="medium">
-      <StatusRow
+      <StatusRow refresh={rf}
         label={data.hasOwner ? (ko ? '전환 가능' : 'Ready') : (ko ? '확인 필요' : 'Check')}
         variant={data.hasOwner ? 'info' : 'warning'}
         text={data.hasOwner ? (ko ? 'Lead 정보로 Opportunity 거래를 만듭니다.' : 'Creates an opportunity deal from this lead.') : t.noOwner}
@@ -299,7 +293,6 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
         </Button>
         <Text variant="microcopy">{joinVals(data.owner && `Owner : ${data.owner}`, closeVal && `${ko ? '마감일' : 'Close date'} ${closeVal}`)}</Text>
       </Flex>
-      {footer}
     </Flex>
   );
 };

@@ -17,8 +17,8 @@ import {
   hubspot,
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
-import { PORTAL, callOD, editorUrl, getLang, objUrl, odVersion, useOD } from './OrderShared.tsx';
-import { IconText, CheckList, FooterLine, StatusRow, joinVals, toast } from './UiKit.tsx';
+import { PORTAL, callOD, editorUrl, getLang, objUrl, useOD } from './OrderShared.tsx';
+import { IconText, CheckList, StatusRow, joinVals, toast, RefreshLink } from './UiKit.tsx';
 
 // Create Order (주문 생성) — Opportunity 가운데 카드 (Ver.01)
 // Order Confirm 단계 + 주문 조건 충족 → Order 파이프라인(PO Registration) 거래 생성
@@ -40,9 +40,7 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
 
   if (error) return <Alert title={ko ? '오류' : 'Error'} variant="danger">{error}</Alert>;
   if (!data) return <LoadingSpinner label={ko ? '불러오는 중입니다...' : 'Loading...'} />;
-  const footer = (
-    <FooterLine version={odVersion()} refreshLabel={ko ? '새로고침' : 'Refresh'} onRefresh={load} href={objUrl(portalId, '0-3', dealId)} />
-  );
+  const rf = <RefreshLink label={ko ? '새로고침' : 'Refresh'} href={objUrl(portalId, '0-3', dealId)} onRefresh={load} />;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tile = (d: any) => (
     <Tile compact>
@@ -61,29 +59,26 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
   if (data.mode === 'order')
     return (
       <Flex direction="column" gap="medium">
-        <StatusRow
+        <StatusRow refresh={rf}
           label={ko ? '원본 Opportunity' : 'Source opportunity'}
           variant="info"
           text={data.source ? (ko ? '이 Order는 영업기회에서 생성되었습니다.' : 'This order was created from an opportunity.') : (ko ? '원본 Opportunity가 없습니다 (직접 만든 Order).' : 'There is no source opportunity (created directly).')}
         />
         {data.source ? tile(data.source) : null}
-        {footer}
       </Flex>
     );
   if (data.mode !== 'opp')
     return (
       <Flex direction="column" gap="small">
-        <StatusRow label={ko ? '해당 없음' : 'Not applicable'} text={ko ? 'Opportunity 거래에서만 사용합니다.' : 'Used only for opportunity deals.'} />
-        {footer}
+        <StatusRow refresh={rf} label={ko ? '해당 없음' : 'Not applicable'} text={ko ? 'Opportunity 거래에서만 사용합니다.' : 'Used only for opportunity deals.'} />
       </Flex>
     );
 
   if (data.existing)
     return (
       <Flex direction="column" gap="medium">
-        <StatusRow label={ko ? '주문 생성됨' : 'Order created'} variant="success" text={ko ? '이 영업기회에서 만든 Order' : 'Order created from this opportunity'} />
+        <StatusRow refresh={rf} label={ko ? '주문 생성됨' : 'Order created'} variant="success" text={ko ? '이 영업기회에서 만든 Order' : 'Order created from this opportunity'} />
         {tile(data.existing)}
-        {footer}
       </Flex>
     );
 
@@ -132,7 +127,7 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
 
   return (
     <Flex direction="column" gap="medium">
-      <StatusRow
+      <StatusRow refresh={rf}
         label={data.ready ? (ko ? '생성 가능' : 'Ready') : ko ? '확인 필요' : 'Check'}
         variant={data.ready ? 'info' : 'warning'}
         text={
@@ -169,7 +164,6 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
         </Button>
         <Text variant="microcopy">{joinVals(data.stage && `${ko ? '현재 단계' : 'Stage'} : ${data.stage}`, data.owner && `Owner : ${data.owner}`)}</Text>
       </Flex>
-      {footer}
     </Flex>
   );
 };

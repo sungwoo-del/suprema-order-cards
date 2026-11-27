@@ -8,6 +8,7 @@ import {
   Divider,
   Flex,
   Icon,
+  Link,
   LoadingSpinner,
   Select,
   Text,
@@ -220,7 +221,16 @@ const BuyerPicker = ({ context, actions }: any) => {
 
       {hasBranch && !isInternal && !locked && (
         <>
-          <Text>{t.count(REGION_LABEL[region], companies.length)}</Text>
+          <Flex direction="row" justify="between" align="center" gap="small">
+            <Box flex={1}>
+              <Text>{t.count(REGION_LABEL[region], companies.length)}</Text>
+            </Box>
+            <Box flex="none">
+              <Link href={{ url: `https://app-na2.hubspot.com/contacts/${context?.portal?.id ?? 245822501}/record/0-3/${dealId}`, external: false }} preventDefault onClick={() => { if (!saving) loadAll(); }}>
+                <Icon name="refresh" screenReaderText={t.refresh} />
+              </Link>
+            </Box>
+          </Flex>
           <Flex direction="row" gap="medium">
             <Box flex={1}>
               <Select
@@ -253,9 +263,6 @@ const BuyerPicker = ({ context, actions }: any) => {
           <Flex direction="row" gap="small">
             <Button variant="primary" onClick={onSave} disabled={!companyId || !dirty || saving}>
               {saving ? t.saving : t.save}
-            </Button>
-            <Button variant="secondary" onClick={loadAll} disabled={saving}>
-              <Icon name="refresh" screenReaderText={t.refresh} />
             </Button>
           </Flex>
         </>

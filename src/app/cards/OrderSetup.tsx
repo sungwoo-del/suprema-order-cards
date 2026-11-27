@@ -75,7 +75,7 @@ type GuideItem = {
 };
 
 // 카드 설명 옆 버전 표기 — 배포할 때 함께 올림
-const CARD_VERSION = '33';
+const CARD_VERSION = '34';
 const CARD_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 const CARD_STAGE = 'Beta';
@@ -1413,12 +1413,27 @@ const OrderSetup = ({ context, actions }: any) => {
 
   return (
     <Flex direction="column" gap="small">
-      {/* 설명 · 주문 가이드 */}
+      {/* 설명 · 주문 가이드 · 새로고침 (오른쪽 끝) */}
       <Flex direction="row" justify="between" align="center" gap="small">
-        <Text variant="microcopy">{t.desc}</Text>
-        <Button variant="secondary" size="xs" overlay={guidePanel}>
-          <Icon name="book" size="sm" /> {t.guideBtn}
-        </Button>
+        <Box flex={1}>
+          <Text variant="microcopy">{t.desc}</Text>
+        </Box>
+        <Box flex="none">
+          <Button variant="secondary" size="xs" overlay={guidePanel}>
+            <Icon name="book" size="sm" /> {t.guideBtn}
+          </Button>
+        </Box>
+        <Box flex="none">
+          <RefreshLink
+            label={t.refresh}
+            href={`https://app-na2.hubspot.com/contacts/${portalId}/record/0-3/${dealId}`}
+            onRefresh={async () => {
+              if (savingGroup) return;
+              setLoading(true);
+              await load();
+            }}
+          />
+        </Box>
       </Flex>
 
       {/* 안내 영역 — 오류만 기본 Alert, 나머지는 작게 */}
@@ -1595,12 +1610,11 @@ const OrderSetup = ({ context, actions }: any) => {
         ),
       )}
 
-      <Divider />
-
-      {/* 하단 — 왼쪽 라인아이템 초기화 · 오른쪽 새로고침 아이콘 (다른 카드와 같은 하단 줄) */}
-      <Flex direction="row" justify="between" align="center">
-        <Box flex="none">
-          {hasItems ? (
+      {/* 하단 — 라인아이템 초기화 (라인아이템이 있을 때만) */}
+      {hasItems ? (
+        <>
+          <Divider />
+          <Flex direction="row" justify="start" align="center">
             <Button
               variant="destructive"
               size="xs"
@@ -1609,18 +1623,9 @@ const OrderSetup = ({ context, actions }: any) => {
             >
               {t.resetBtn}
             </Button>
-          ) : null}
-        </Box>
-        <RefreshLink
-          label={t.refresh}
-          href={`https://app-na2.hubspot.com/contacts/${portalId}/record/0-3/${dealId}`}
-          onRefresh={async () => {
-            if (savingGroup) return;
-            setLoading(true);
-            await load();
-          }}
-        />
-      </Flex>
+          </Flex>
+        </>
+      ) : null}
     </Flex>
   );
 };
