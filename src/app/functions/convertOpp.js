@@ -131,6 +131,22 @@ async function existingOpp(dealId, lang) {
   return { id: String(d.id), ...d.properties };
 }
 
+// Opportunity → 원본 Lead (Lead 쪽 "Opportunity" 라벨로 연결된 거래)
+async function originLead(oppId, s, pls, lang) {
+  const t = await oppLabel(lang);
+  const rows = await assocAll('deals', oppId, 'deals');
+  if (!rows.length) return null;
+  const data = await api('/crm/v3/objects/deals/batch/read', { method: 'POST', body: { properties: ['dealname', 'pipeline', 'dealstage', 'hubspot_owner_id'], inputs: rows.map((r) => ({ id: r.id })) } });
+  for (const d of data.results || []) {
+    const pr = d.properties || {};
+    if (pr.pipeline !== s.sourcePipeline) continue;
+    const back = await assocAll('deals', d.id, 'deals');
+    if (!back.some((r) => r.id === String(oppId) && r.types.some((x) => Number(x.typeId) === Number(t.associationTypeId)))) continue;
+    const pl = pls.find((x) => x.id === pr.pipeline);
+    return { id: String(d.id), dealname: pr.dealname || '', pipelineLabel: pl ? pl.label : '', stageLabel: ((pl && pl.stages.find((x) => x.id === pr.dealstage)) || {}).label || '', ownerName: await ownerName(pr.hubspot_owner_id, lang) };
+  }
+  return null;
+}
 async function ownerName(id, lang) {
   if (!id) return '';
   try {
@@ -207,7 +223,12 @@ async function load(p, lang) {
     dealname: d.dealname || '', closedate: d.closedate || '', owner: await ownerName(d.hubspot_owner_id, lang), closeDefault: defaultClose(d.closedate), hasOwner: !!d.hubspot_owner_id,
     copyLineItems: s.copyLineItems, copyActivities: s.copyActivities,
   };
-  if (!base.inSource) return base;
+  if (!base.inSource) {
+    // Opportunity 쪽에서 열면 원본 Lead를 보여줌
+    base.inTarget = d.pipeline === s.targetPipeline;
+    if (base.inTarget) base.origin = await originLead(p.dealId, s, pls, lang).catch(() => null);
+    return base;
+  }
   const existing = await existingOpp(p.dealId, lang).catch(() => null);
   if (existing) {
     const pl = pls.find((x) => x.id === existing.pipeline);

@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
+  Accordion,
   Alert,
   Button,
   DateInput,
-  DescriptionList,
-  DescriptionListItem,
-  Divider,
+  Dropdown,
   Flex,
   Input,
   Link,
@@ -13,21 +12,24 @@ import {
   Modal,
   ModalBody,
   ModalFooter,
-  StepIndicator,
+  Statistics,
+  StatisticsItem,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-  Tag,
   Text,
+  Tile,
   hubspot,
 } from '@hubspot/ui-extensions';
-import { CrmActionButton } from '@hubspot/ui-extensions/crm';
+import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import { PORTAL, T, callCV, cvVersion, getLang, objUrl, useCV } from './ConvertShared.tsx';
+import { FooterLine, StatusRow, joinVals } from './UiKit.tsx';
 
-// Lead(Partner) → Opportunity 전환 — 가운데 컬럼 카드
+// Lead(Partner) → Opportunity 전환 — 가운데 컬럼 카드 (Ver.04 개편 · docs/05_UI_UX_지침.md)
+// 상태 : 대기 → 가능 → 완료 / Opportunity 화면에서는 원본 Lead
 hubspot.extend<'crm.record.tab'>(({ context, actions }) => (
   <ConvertOpp context={context} actions={actions} />
 ));
@@ -41,10 +43,22 @@ const toDateObj = (s: string) => {
 const fromDateObj = (d: any) =>
   d ? `${d.year}-${String(d.month + 1).padStart(2, '0')}-${String(d.date).padStart(2, '0')}` : '';
 
+// 3단계 진행 (Lead → Converted → Opportunity)
+const Steps = ({ cur, labels }: { cur: number; labels: string[] }) => (
+  <Flex direction="row" gap="small" align="center" wrap="wrap">
+    {labels.map((s, i) => (
+      <Text key={s} variant="microcopy" format={i === cur ? { fontWeight: 'bold' } : undefined}>
+        {`${i < cur ? '✓' : i === cur ? '●' : '○'} ${s}${i < labels.length - 1 ? '  →' : ''}`}
+      </Text>
+    ))}
+  </Flex>
+);
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
   const lang = getLang(context);
   const t = T[lang];
+  const ko = lang === 'ko';
   const dealId = String(context?.crm?.objectId ?? '');
   const portalId = context?.portal?.id ?? PORTAL;
   const { data, error, load } = useCV(dealId, lang, actions);
@@ -64,57 +78,51 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
   if (!data) return <LoadingSpinner label={t.loading} />;
 
   const footer = (
-    <>
-      <Divider />
-      <Flex direction="row" justify="between" align="center">
-        <Text variant="microcopy">Suprema Order - HelloDigital</Text>
-        <Link href={{ url: objUrl(portalId, '0-3', dealId), external: false }} preventDefault onClick={load}>
-          {t.refresh}
-        </Link>
+    <FooterLine version={cvVersion()} refreshLabel={t.refresh} onRefresh={load} href={objUrl(portalId, '0-3', dealId)} />
+  );
+  const stepLabels = ['Lead', data.triggerLabels[0] || 'Converted', data.target?.pipeline || 'Opportunity'];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dealTile = (d: any, menu?: React.ReactNode) => (
+    <Tile compact>
+      <Flex direction="row" justify="between" align="start" gap="small">
+        <Flex direction="column" gap="extra-small">
+          <Flex direction="row" gap="small" align="center">
+            <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-3', objectId: Number(d.id) }}>
+              {d.dealname}
+            </CrmActionLink>
+            <Link href={{ url: objUrl(portalId, '0-3', d.id), external: true }}>↗</Link>
+          </Flex>
+          <Text variant="microcopy">
+            {joinVals(d.pipelineLabel, d.stageLabel, d.ownerName, String(d.createdate || '').slice(0, 10))}
+          </Text>
+        </Flex>
+        {menu || null}
       </Flex>
-    </>
+    </Tile>
   );
-  const head = (
-    <Text variant="microcopy">
-      {t.desc} ({cvVersion()})
-    </Text>
-  );
-  if (!data.inSource)
+
+  // ── Lead 파이프라인이 아닌 거래
+  if (!data.inSource) {
+    if (data.inTarget && data.origin)
+      return (
+        <Flex direction="column" gap="medium">
+          <StatusRow label={ko ? '원본 Lead' : 'Source lead'} variant="info" text={ko ? '이 거래는 Lead에서 전환되었습니다.' : 'This deal was converted from a lead.'} />
+          {dealTile(data.origin)}
+          {footer}
+        </Flex>
+      );
     return (
       <Flex direction="column" gap="small">
-        {head}
-        <Alert title={lang === 'ko' ? '알림' : 'Notice'} variant="info">
-          {t.notSource}
-        </Alert>
+        <StatusRow
+          label={ko ? '해당 없음' : 'Not applicable'}
+          text={data.inTarget ? (ko ? '원본 Lead가 없습니다 (직접 만든 거래).' : 'There is no source lead (created directly).') : t.notSource}
+        />
         {footer}
       </Flex>
     );
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stageNames = data.stages.map((s: any) => s.label);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cur = Math.max(0, data.stages.findIndex((s: any) => s.id === data.current));
-  const tracker = <StepIndicator stepNames={stageNames} currentStep={cur} variant={stageNames.length > 5 ? 'compact' : 'default'} />;
-  const trig = data.triggerLabels.join(' / ') || 'Converted';
+  }
 
   const ex = data.existing;
-  const resultTable = (r: any) => {
-    const rows: [string, string][] = [];
-    if (r.props) rows.push([t.rProps, `${r.props}`]);
-    rows.push([t.rAssoc, `${r.assoc.linked}${r.assoc.failed ? ` · ${t.failed(r.assoc.failed)}` : ''}`]);
-    if (r.lines) rows.push([t.rLines, `${r.lines.created}${r.lines.failed ? ` · ${t.failed(r.lines.failed)}` : ''}`]);
-    rows.push([t.rActs, `${r.acts.linked}${r.acts.failed ? ` · ${t.failed(r.acts.failed)}` : ''}`]);
-    return (
-      <DescriptionList direction="row">
-        {rows.map(([k, v]) => (
-          <DescriptionListItem key={k} label={k}>
-            <Text>{v}</Text>
-          </DescriptionListItem>
-        ))}
-      </DescriptionList>
-    );
-  };
-
   const relink = async () => {
     setBusy(true);
     setErr('');
@@ -127,68 +135,54 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
     setBusy(false);
   };
 
+  // ── 전환 완료
   if (ex) {
     const failed = result && (result.assoc.failed || result.acts.failed || (result.lines && result.lines.failed));
     return (
       <Flex direction="column" gap="medium">
-        {head}
-        {tracker}
-        <Alert title={lang === 'ko' ? '완료' : 'Done'} variant="success">
-          {result ? t.done(ex.dealname) : t.already}
-        </Alert>
+        <StatusRow label={ko ? '전환 완료' : 'Converted'} variant="success" text={result ? t.done(ex.dealname) : t.already} />
+        <Steps cur={2} labels={stepLabels} />
         {err ? <Alert title={t.error} variant="danger">{err}</Alert> : null}
-        <Flex direction="row" justify="between" align="center" wrap="wrap" gap="small">
-          <Flex direction="column" gap="flush">
-            <Flex direction="row" gap="small" align="center">
-              <Text format={{ fontWeight: 'bold' }}>{ex.dealname}</Text>
-              <Tag variant="success">Opportunity</Tag>
-            </Flex>
-            <Text variant="microcopy">
-              {[ex.pipelineLabel, ex.stageLabel, ex.ownerName, String(ex.createdate || '').slice(0, 10)].filter(Boolean).join(' · ')}
-            </Text>
-          </Flex>
-          <Flex direction="row" gap="extra-small">
-            <CrmActionButton actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-3', objectId: Number(ex.id) }} variant="secondary" size="xs">
-              {t.preview}
-            </CrmActionButton>
-            <Button size="xs" href={{ url: objUrl(portalId, '0-3', ex.id), external: true }}>
-              {t.newTab}
-            </Button>
-          </Flex>
-        </Flex>
+        {dealTile(
+          ex,
+          <Dropdown buttonText={ko ? '더보기' : 'More'} buttonSize="xs" variant="secondary">
+            <Dropdown.ButtonItem onClick={relink}>{busy ? t.creating : t.relink}</Dropdown.ButtonItem>
+          </Dropdown>,
+        )}
         {result ? (
-          <>
-            <Text format={{ fontWeight: 'bold' }}>{t.result}</Text>
-            {resultTable(result)}
-          </>
+          <Statistics>
+            {result.props ? <StatisticsItem label={t.rProps} number={String(result.props)} /> : null}
+            <StatisticsItem label={t.rAssoc} number={String(result.assoc.linked)} />
+            {result.lines ? <StatisticsItem label={t.rLines} number={String(result.lines.created)} /> : null}
+            <StatisticsItem label={t.rActs} number={String(result.acts.linked)} />
+          </Statistics>
         ) : null}
         {failed ? (
-          <Alert title={lang === 'ko' ? '확인 필요' : 'Check'} variant="warning">
+          <Alert title={ko ? '확인 필요' : 'Check'} variant="warning">
             {t.partial}
           </Alert>
         ) : null}
-        <Flex direction="row" justify="end">
-          <Button size="xs" disabled={busy} onClick={relink}>
-            {t.relink}
-          </Button>
-        </Flex>
         {footer}
       </Flex>
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const stage = (data.stages.find((s: any) => s.id === data.current) || {}).label || '';
+  const trig = data.triggerLabels.join(' / ') || 'Converted';
+
+  // ── 전환 대기
   if (!data.active)
     return (
-      <Flex direction="column" gap="medium">
-        {head}
-        {tracker}
-        <Alert title={lang === 'ko' ? '알림' : 'Notice'} variant="info">
-          {t.notStage(trig)}
-        </Alert>
+      <Flex direction="column" gap="small">
+        <StatusRow label={ko ? '전환 대기' : 'Waiting'} text={`${ko ? '현재 단계' : 'Current stage'} : ${stage || '--'}`} />
+        <Steps cur={0} labels={stepLabels} />
+        <Text variant="microcopy">{t.notStage(trig)}</Text>
         {footer}
       </Flex>
     );
 
+  // ── 전환 가능
   const create = async () => {
     setBusy(true);
     setErr('');
@@ -214,7 +208,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
     }
     setBusy(false);
   };
-
+  const closeVal = close ?? data.closeDefault ?? String(data.closedate || '').slice(0, 10);
   const modal = (
     <Modal id={MODAL} title={t.confirmTitle} width="md">
       <ModalBody>
@@ -224,7 +218,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
             name="cv_close"
             label={t.closedate}
             format="YYYY-MM-DD"
-            value={toDateObj(close ?? data.closeDefault ?? String(data.closedate || '').slice(0, 10))}
+            value={toDateObj(closeVal)}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onChange={(v: any) => setClose(fromDateObj(v))}
           />
@@ -232,16 +226,15 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
             {t.stage} : {data.target.pipeline} · {data.target.stage}
           </Text>
           <Text variant="microcopy">
-            ⓘ {lang === 'ko' ? 'Lead 마감일이 지났거나 없으면 오늘부터 90일 뒤로 제안합니다.' : 'If the lead close date has passed or is empty, today + 90 days is suggested.'}
+            ⓘ {ko ? 'Lead 마감일이 지났거나 없으면 오늘부터 90일 뒤로 제안합니다.' : 'If the lead close date has passed or is empty, today + 90 days is suggested.'} {t.confirmText}
           </Text>
-          <Text variant="microcopy">ⓘ {t.confirmText}</Text>
         </Flex>
       </ModalBody>
       <ModalFooter>
-        <Button onClick={() => actions.closeOverlay(MODAL)}>{t.cancel}</Button>
         <Button variant="primary" disabled={busy || !(name ?? data.dealname)} onClick={create}>
           {busy ? t.creating : t.create}
         </Button>
+        <Button onClick={() => actions.closeOverlay(MODAL)}>{t.cancel}</Button>
       </ModalFooter>
     </Modal>
   );
@@ -250,84 +243,69 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
   const assoc = (data.assoc || []).filter((a: any) => !a.error);
   return (
     <Flex direction="column" gap="medium">
-      {head}
-      {tracker}
+      <StatusRow
+        label={data.hasOwner ? (ko ? '전환 가능' : 'Ready') : (ko ? '확인 필요' : 'Check')}
+        variant={data.hasOwner ? 'info' : 'warning'}
+        text={data.hasOwner ? (ko ? 'Lead 정보로 Opportunity 거래를 만듭니다.' : 'Creates an opportunity deal from this lead.') : t.noOwner}
+      />
+      <Steps cur={1} labels={stepLabels} />
       {err ? <Alert title={t.error} variant="danger">{err}</Alert> : null}
-      {data.hasOwner ? (
-        <Alert title={lang === 'ko' ? '권장 안내' : 'Recommended'} variant="tip">
-          {t.ready}
-        </Alert>
-      ) : (
-        <Alert title={lang === 'ko' ? '확인 필요' : 'Check'} variant="warning">
-          {t.noOwner}
-        </Alert>
-      )}
-
-      <Flex direction="row" gap="small" align="baseline">
-        <Text format={{ fontWeight: 'bold' }}>{t.props}</Text>
-        <Text variant="microcopy">{t.propsSub}</Text>
-      </Flex>
-      <Table bordered density="condensed">
-        <TableHead>
-          <TableRow>
-            <TableHeader>{lang === 'ko' ? '속성' : 'Property'}</TableHeader>
-            <TableHeader>{t.value}</TableHeader>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {(data.props || []).map((p: any) => (
-            <TableRow key={p.name}>
-              <TableCell>{p.label}</TableCell>
-              <TableCell>{p.value || t.empty}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      {data.copyLineItems ? <Text variant="microcopy">{t.lines(data.lineItems || 0)}</Text> : null}
-
-      <Flex direction="row" gap="small" align="baseline">
-        <Text format={{ fontWeight: 'bold' }}>{t.assoc}</Text>
-        <Text variant="microcopy">{t.assocSub}</Text>
-      </Flex>
-      {assoc.length ? (
-        <Table bordered density="condensed">
-          <TableHead>
-            <TableRow>
-              <TableHeader>{lang === 'ko' ? '연결 대상' : 'Object'}</TableHeader>
-              <TableHeader>{lang === 'ko' ? '레코드' : 'Record'}</TableHeader>
-              <TableHeader>{lang === 'ko' ? '라벨' : 'Labels'}</TableHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {assoc.map((a: any) => (
-              <TableRow key={`${a.type}-${a.id}`}>
-                <TableCell>{t.type[a.type] || a.type}</TableCell>
-                <TableCell>{a.name}</TableCell>
-                <TableCell>{a.labels.join(', ') || (lang === 'ko' ? '일반 연결 (라벨 없음)' : 'Association (no label)')}</TableCell>
+      <Statistics>
+        <StatisticsItem label={ko ? '복사 속성' : 'Properties'} number={String((data.props || []).length)} />
+        <StatisticsItem label={ko ? '연결 레코드' : 'Associations'} number={String(assoc.length)} />
+        {data.copyLineItems ? <StatisticsItem label={t.rLines} number={String(data.lineItems || 0)} /> : null}
+        {data.copyActivities ? <StatisticsItem label={ko ? '활동 공유' : 'Activities'} number={String(data.activities?.total || 0)} /> : null}
+      </Statistics>
+      <Accordion title={ko ? '복사될 내용 자세히 보기' : 'What will be copied'} size="sm" defaultOpen={false}>
+        <Flex direction="column" gap="small">
+          <Table bordered density="condensed">
+            <TableHead>
+              <TableRow>
+                <TableHeader>{ko ? '속성' : 'Property'}</TableHeader>
+                <TableHeader>{t.value}</TableHeader>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : (
-        <Text variant="microcopy">ⓘ {t.noAssoc}</Text>
-      )}
-
-      {data.copyActivities ? (
-        <>
-          <Flex direction="row" gap="small" align="baseline">
-            <Text format={{ fontWeight: 'bold' }}>{t.acts}</Text>
-            <Text variant="microcopy">{t.actsSub}</Text>
-          </Flex>
-          <Text>{t.actsText(data.activities?.total || 0)}</Text>
-        </>
-      ) : null}
-      <Divider />
-      <Flex direction="row" justify="end">
+            </TableHead>
+            <TableBody>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {(data.props || []).map((p: any) => (
+                <TableRow key={p.name}>
+                  <TableCell>{p.label}</TableCell>
+                  <TableCell>{p.value || '--'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {assoc.length ? (
+            <Table bordered density="condensed">
+              <TableHead>
+                <TableRow>
+                  <TableHeader>{ko ? '연결 대상' : 'Object'}</TableHeader>
+                  <TableHeader>{ko ? '레코드' : 'Record'}</TableHeader>
+                  <TableHeader>{ko ? '라벨' : 'Labels'}</TableHeader>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {assoc.map((a: any) => (
+                  <TableRow key={`${a.type}-${a.id}`}>
+                    <TableCell>{t.type[a.type] || a.type}</TableCell>
+                    <TableCell>{a.name}</TableCell>
+                    <TableCell>{a.labels.join(', ') || '--'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <Text variant="microcopy">ⓘ {t.noAssoc}</Text>
+          )}
+          {data.copyActivities ? <Text variant="microcopy">ⓘ {t.actsText(data.activities?.total || 0)}</Text> : null}
+        </Flex>
+      </Accordion>
+      <Flex direction="row" gap="small" align="center" wrap="wrap">
         <Button variant="primary" disabled={!data.hasOwner} overlay={modal}>
           {t.create}
         </Button>
+        <Text variant="microcopy">{joinVals(data.owner && `Owner : ${data.owner}`, closeVal && `${ko ? '마감일' : 'Close date'} ${closeVal}`)}</Text>
       </Flex>
       {footer}
     </Flex>

@@ -8,7 +8,6 @@ import {
   DescriptionListItem,
   Divider,
   Flex,
-  Icon,
   Input,
   Link,
   LoadingSpinner,
@@ -16,14 +15,16 @@ import {
   Select,
   Tag,
   Text,
+  Tile,
   hubspot,
 } from '@hubspot/ui-extensions';
+import { SectionHead, joinVals } from './UiKit.tsx';
 import { CrmActionButton } from '@hubspot/ui-extensions/crm';
 
 // End Customer(최종 고객사) 카드 공용 — 가운데 컬럼 카드 · 오른쪽 사이드바 카드가 함께 씀
 // 규칙 : 회사 1개 · 담당자 여러 명 · 둘 다 "End Customer" 연결 라벨
 // deploy.sh가 배포할 때 EC_VERSION / EC_UPDATED 를 자동으로 올립니다.
-export const EC_VERSION = '03';
+export const EC_VERSION = '04';
 export const EC_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const EC_STAGE = 'Beta';
@@ -151,6 +152,18 @@ export const T = {
     lFunction: 'Job function',
     lPhone: 'Phone',
     selectedN: (n: number) => `${n} selected`,
+    stepCompany: '1. Company',
+    stepContacts: '2. Contacts (select one or more)',
+    saveN: (c: number, n: number) => `Save (company ${c} · contacts ${n})`,
+    linked: 'Linked',
+    notLinked: 'Not linked',
+    counts: (c: number, n: number) => `Company ${c} · Contacts ${n}`,
+    edit: 'Edit',
+    more: 'More',
+    openTab: 'Open in new tab',
+    changeCompany: 'Change company',
+    lName: 'Name',
+    emptyLine: 'There is no end customer. Action required: search for the company and link it.',
     pending: 'Applied on save',
   },
   ko: {
@@ -219,6 +232,18 @@ export const T = {
     lFunction: 'Job function (직무)',
     lPhone: 'Phone (전화)',
     selectedN: (n: number) => `${n}명 선택`,
+    stepCompany: '1. 회사',
+    stepContacts: '2. 담당자 선택 (여러 명 가능)',
+    saveN: (c: number, n: number) => `저장 (회사 ${c} · 담당자 ${n}명)`,
+    linked: '연결됨',
+    notLinked: '미연결',
+    counts: (c: number, n: number) => `회사 ${c} · 담당자 ${n}명`,
+    edit: '편집',
+    more: '더보기',
+    openTab: '새 탭에서 열기',
+    changeCompany: '회사 변경',
+    lName: '이름',
+    emptyLine: '최종 고객사가 없습니다. 필요한 조치 : 회사를 검색해 연결하세요.',
     pending: '저장 시 반영',
   },
 };
@@ -396,9 +421,9 @@ export const Editor = ({
         </Box1>
       </Flex>
       <Text variant="microcopy">ⓘ {t.teamAuto}</Text>
-      <Flex direction="row" gap="small" justify="end">
-        <Button size="xs" onClick={() => { setMode(''); setForm({}); }}>{t.cancel}</Button>
-        <Button size="xs" variant="primary" disabled={busy || !f('name') || !f('account_country')} onClick={create}>{t.create}</Button>
+      <Flex direction="row" gap="small">
+        <Button size="sm" variant="primary" disabled={busy || !f('name') || !f('account_country')} onClick={create}>{t.create}</Button>
+        <Button size="sm" onClick={() => { setMode(''); setForm({}); }}>{t.cancel}</Button>
       </Flex>
     </Flex>
   );
@@ -415,9 +440,9 @@ export const Editor = ({
         <Box1><Input name="job_function" label={t.jobfunction} value={f('job_function')} onChange={setF('job_function')} /></Box1>
       </Flex>
       <Text variant="microcopy">ⓘ {company?.name}</Text>
-      <Flex direction="row" gap="small" justify="end">
-        <Button size="xs" onClick={() => { setMode(''); setForm({}); }}>{t.cancel}</Button>
-        <Button size="xs" variant="primary" disabled={busy || !f('firstname') || !f('email')} onClick={create}>{t.create}</Button>
+      <Flex direction="row" gap="small">
+        <Button size="sm" variant="primary" disabled={busy || !f('firstname') || !f('email')} onClick={create}>{t.create}</Button>
+        <Button size="sm" onClick={() => { setMode(''); setForm({}); }}>{t.cancel}</Button>
       </Flex>
     </Flex>
   );
@@ -436,20 +461,22 @@ export const Editor = ({
       ) : null}
 
       {/* ① 회사 */}
-      <Flex direction="row" gap="small" align="center">
-        <Icon name={company ? 'success' : 'circleHollow'} size="sm" color={company ? 'success' : 'inherit'} />
-        <Text format={{ fontWeight: 'bold' }}>{t.company}</Text>
-        <Text variant="microcopy">[ {company ? company.name : t.notSet} ]</Text>
-        {changedCompany ? <Tag variant="warning">{t.pending}</Tag> : null}
-      </Flex>
+      <SectionHead
+        title={t.stepCompany}
+        action={company && !searchOpen ? (
+          <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setResults(null); setSearchOpen(true); }}>
+            {t.change}
+          </Link>
+        ) : undefined}
+      />
       {company && !searchOpen ? (
-        <Flex direction="row" gap="small" align="center" justify="between">
-          <Flex direction="row" gap="small" align="center">
-            <Text format={{ fontWeight: 'bold' }}>{company.name}</Text>
-            {company.domain ? <Text variant="microcopy">{company.domain}</Text> : null}
+        <Tile compact>
+          <Flex direction="row" gap="small" align="center" wrap="wrap">
+            <Text format={{ fontWeight: 'demibold' }}>{company.name}</Text>
+            <Text variant="microcopy">{joinVals(company.country, company.lifecycle, company.domain)}</Text>
+            {changedCompany ? <Text variant="microcopy">· {t.pending}</Text> : null}
           </Flex>
-          <Button size="xs" onClick={() => { setResults(null); setSearchOpen(true); }}>{t.change}</Button>
-        </Flex>
+        </Tile>
       ) : (
         <Flex direction="column" gap="extra-small">
           <Flex direction="row" gap="small" align="end">
@@ -489,25 +516,23 @@ export const Editor = ({
       )}
       {mode === 'company' ? companyForm : null}
       {changedCompany && data.company ? <Text variant="microcopy">ⓘ {t.companyChange}</Text> : null}
-      <Divider />
 
       {/* ② 담당자 */}
-      <Flex direction="row" gap="small" align="center">
-        <Icon name={checked.length ? 'success' : 'circleHollow'} size="sm" color={checked.length ? 'success' : 'inherit'} />
-        <Text format={{ fontWeight: 'bold' }}>{t.contact}</Text>
-        <Text variant="microcopy">[ {checked.length ? t.selectedN(checked.length) : t.notSet} ]</Text>
-        {changedContacts ? <Tag variant="warning">{t.pending}</Tag> : null}
-      </Flex>
+      <SectionHead
+        title={t.stepContacts}
+        action={company && list !== null ? (
+          <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setMode('contact'); setForm({}); }}>
+            {t.newContact}
+          </Link>
+        ) : undefined}
+      />
       {!company ? (
         <Text variant="microcopy">ⓘ {t.pickCompanyFirst}</Text>
       ) : list === null ? (
         <LoadingSpinner size="xs" label={t.loading} />
       ) : (
         <Flex direction="column" gap="extra-small">
-          <Flex direction="row" justify="between" align="center">
-            <Text variant="microcopy">{list.length ? t.contactsOf(list.length) : t.noContacts}</Text>
-            <Button size="xs" onClick={() => { setMode('contact'); setForm({}); }}>{t.newContact}</Button>
-          </Flex>
+          <Text variant="microcopy">{list.length ? t.contactsOf(list.length) : t.noContacts}</Text>
           {[...list, ...outside].map((c) => (
             <Checkbox
               key={c.id}
@@ -523,13 +548,13 @@ export const Editor = ({
       )}
       {mode === 'contact' ? contactForm : null}
       <Divider />
-      <Text variant="microcopy">{t.saveHint}</Text>
-      <Flex direction="row" gap="small" justify="end">
-        {onCancel ? <Button onClick={onCancel}>{t.cancel}</Button> : null}
+      <Flex direction="row" gap="small" align="center" wrap="wrap">
         <Button variant="primary" disabled={busy || !dirty} onClick={save}>
-          {busy ? t.saving : t.save}
+          {busy ? t.saving : t.saveN(company ? 1 : 0, checked.length)}
         </Button>
+        {onCancel ? <Button onClick={onCancel}>{t.cancel}</Button> : null}
       </Flex>
+      <Text variant="microcopy">ⓘ {t.saveHint}</Text>
     </Flex>
   );
 };

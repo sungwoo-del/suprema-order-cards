@@ -2,34 +2,29 @@ import { useState } from 'react';
 import {
   Alert,
   Button,
-  Divider,
+  Dropdown,
   Flex,
-  Icon,
   Link,
   LoadingSpinner,
   Modal,
   ModalBody,
   ModalFooter,
-  Tag,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Text,
+  Tile,
   hubspot,
 } from '@hubspot/ui-extensions';
-import {
-  CompanySummary,
-  ContactSummary,
-  Editor,
-  PORTAL,
-  RecordLinks,
-  T,
-  callEC,
-  ecVersion,
-  getLang,
-  objUrl,
-  useEC,
-} from './EndCustomerShared.tsx';
+import { CrmActionLink } from '@hubspot/ui-extensions/crm';
+import { Editor, PORTAL, T, callEC, ecVersion, getLang, objUrl, useEC, webUrl } from './EndCustomerShared.tsx';
+import { FooterLine, SectionHead, StatusRow, joinVals } from './UiKit.tsx';
 
-// End Customer(최종 고객사) — 가운데 컬럼 카드
-// 연결이 없으면 선택 화면, 있으면 요약 화면([변경] · [+ 담당자 추가]로 선택 화면 열기)
+// End Customer(최종 고객사) — 가운데 컬럼 카드 (Ver.04 개편 · docs/05_UI_UX_지침.md)
+// 상태 줄 → 회사 타일 → 담당자 표 → 하단 1줄. 편집은 같은 카드 안에서 한 화면.
 hubspot.extend<'crm.record.tab'>(({ context, actions }) => (
   <EndCustomer context={context} actions={actions} />
 ));
@@ -47,20 +42,8 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
 
-  const header = (
-    <Flex direction="column" gap="extra-small">
-      <Text variant="microcopy">
-        {t.desc} ({ecVersion()})
-      </Text>
-    </Flex>
-  );
   const footer = (
-    <Flex direction="row" justify="between" align="center">
-      <Text variant="microcopy">Suprema Order - HelloDigital</Text>
-      <Link href={{ url: objUrl(portalId, '0-3', dealId), external: false }} preventDefault onClick={load}>
-        {t.refresh}
-      </Link>
-    </Flex>
+    <FooterLine version={ecVersion()} refreshLabel={t.refresh} onRefresh={load} href={objUrl(portalId, '0-3', dealId)} />
   );
   if (error)
     return (
@@ -70,18 +53,22 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
     );
   if (!data) return <LoadingSpinner label={t.loading} />;
 
-  const empty = !data.company && !data.contacts.length;
+  const co = data.company;
+  const n = data.contacts.length;
+  const empty = !co && !n;
+  const status = (
+    <StatusRow
+      label={empty ? t.notLinked : t.linked}
+      variant={empty ? 'warning' : 'success'}
+      text={empty ? t.emptyLine : t.counts(co ? 1 : 0, n)}
+      action={!empty && !editing ? <Button size="xs" onClick={() => setEditing(true)}>{t.edit}</Button> : undefined}
+    />
+  );
+
   if (empty || editing)
     return (
       <Flex direction="column" gap="medium">
-        {header}
-        {empty && !editing ? (
-          <Alert title={lang === 'ko' ? '권장 안내' : 'Recommended'} variant="tip">
-            {lang === 'ko'
-              ? '최종 고객사가 없습니다. 필요한 조치 : 최종 고객사를 선택하거나 새로 만드세요.'
-              : 'There is no end customer. Action required: select or create the end customer.'}
-          </Alert>
-        ) : null}
+        {status}
         <Editor
           lang={lang}
           dealId={dealId}
@@ -93,7 +80,6 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
           }}
           onCancel={editing ? () => setEditing(false) : undefined}
         />
-        <Divider />
         {footer}
       </Flex>
     );
@@ -120,18 +106,20 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
         </Text>
       </ModalBody>
       <ModalFooter>
-        <Button onClick={() => actions.closeOverlay(`${UNLINK_MODAL}-${id}`)}>{t.cancel}</Button>
         <Button variant="destructive" disabled={!!busy} onClick={() => unlink(kind, id)}>
           {t.unlink}
         </Button>
+        <Button onClick={() => actions.closeOverlay(`${UNLINK_MODAL}-${id}`)}>{t.cancel}</Button>
       </ModalFooter>
     </Modal>
   );
+  const newTab = (type: string, id: string) => (
+    <Link href={{ url: objUrl(portalId, type, id), external: true }}>↗</Link>
+  );
 
-  const co = data.company;
   return (
     <Flex direction="column" gap="medium">
-      {header}
+      {status}
       {err ? (
         <Alert title={t.error} variant="danger">
           {err}
@@ -143,73 +131,77 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
         </Alert>
       ) : null}
 
-      {/* 회사 */}
-      <Flex direction="row" gap="small" align="center">
-        <Icon name={co ? 'success' : 'circleHollow'} size="sm" color={co ? 'success' : 'inherit'} />
-        <Text format={{ fontWeight: 'bold' }}>{t.company}</Text>
-        <Text variant="microcopy">[ {co ? co.name : t.notSet} ]</Text>
-      </Flex>
+      {/* 회사 — 기본 연결 카드와 같은 타일 */}
+      <SectionHead title={lang === 'ko' ? '회사' : 'Company'} />
       {co ? (
-        <Flex direction="column" gap="small">
-          <Flex direction="row" justify="between" align="center" wrap="wrap" gap="small">
-            <Flex direction="row" gap="small" align="center">
-              <Text format={{ fontWeight: 'bold' }}>{co.name}</Text>
-              <Tag variant="success">End Customer</Tag>
-            </Flex>
-            <Flex direction="row" gap="extra-small" align="center">
-              <RecordLinks lang={lang} portalId={portalId} type="0-2" id={co.id} />
-              <Button size="xs" onClick={() => setEditing(true)}>
-                {t.change}
-              </Button>
-            </Flex>
-          </Flex>
-          <CompanySummary lang={lang} c={co} />
-        </Flex>
-      ) : (
-        <Flex direction="row" justify="between" align="center">
-          <Text variant="microcopy">ⓘ {t.noCompanyLinked}</Text>
-          <Button size="xs" onClick={() => setEditing(true)}>
-            {t.select}
-          </Button>
-        </Flex>
-      )}
-      <Divider />
-
-      {/* 담당자 */}
-      <Flex direction="row" gap="small" align="center" justify="between">
-        <Flex direction="row" gap="small" align="center">
-          <Icon name={data.contacts.length ? 'success' : 'circleHollow'} size="sm" color={data.contacts.length ? 'success' : 'inherit'} />
-          <Text format={{ fontWeight: 'bold' }}>{t.contact}</Text>
-          <Text variant="microcopy">
-            [ {data.contacts.length ? `${data.contacts[0].name}${data.contacts.length > 1 ? (lang === 'ko' ? ` 외 ${data.contacts.length - 1}명` : ` +${data.contacts.length - 1}`) : ''}` : t.notSet} ]
-          </Text>
-        </Flex>
-        <Button size="xs" onClick={() => setEditing(true)}>
-          {t.addContact}
-        </Button>
-      </Flex>
-      {data.contacts.length ? (
-        data.contacts.map((c) => (
-          <Flex key={c.id} direction="column" gap="small">
-            <Flex direction="row" justify="between" align="center" wrap="wrap" gap="small">
+        <Tile compact>
+          <Flex direction="row" justify="between" align="start" gap="small">
+            <Flex direction="column" gap="extra-small">
               <Flex direction="row" gap="small" align="center">
-                <Text format={{ fontWeight: 'bold' }}>{c.name}</Text>
-                <Tag variant="success">End Customer</Tag>
+                <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-2', objectId: Number(co.id) }}>
+                  {co.name}
+                </CrmActionLink>
+                {newTab('0-2', co.id)}
               </Flex>
-              <Flex direction="row" gap="extra-small" align="center">
-                <RecordLinks lang={lang} portalId={portalId} type="0-1" id={c.id} />
-                <Button size="xs" overlay={unlinkModal('contact', c.id, c.name)}>
-                  {t.unlink}
-                </Button>
-              </Flex>
+              <Text variant="microcopy">{joinVals(co.country, co.industry, co.lifecycle, co.team)}</Text>
+              {co.website ? (
+                <Link href={{ url: webUrl(co.website), external: true }}>{co.website}</Link>
+              ) : null}
             </Flex>
-            <ContactSummary lang={lang} c={c} />
+            <Dropdown buttonText={t.more} buttonSize="xs" variant="secondary">
+              <Dropdown.ButtonItem onClick={() => setEditing(true)}>{t.changeCompany}</Dropdown.ButtonItem>
+              <Dropdown.ButtonItem overlay={unlinkModal('company', co.id, co.name)}>{t.unlink}</Dropdown.ButtonItem>
+            </Dropdown>
           </Flex>
-        ))
+        </Tile>
+      ) : (
+        <Text variant="microcopy">ⓘ {t.noCompanyLinked}</Text>
+      )}
+
+      {/* 담당자 — 표 (행 동작은 오른쪽 ⋯) */}
+      <SectionHead
+        title={`${lang === 'ko' ? '담당자' : 'Contacts'} (${n})`}
+        action={<Button size="xs" onClick={() => setEditing(true)}>{t.addContact}</Button>}
+      />
+      {n ? (
+        <Table bordered density="condensed">
+          <TableHead>
+            <TableRow>
+              <TableHeader>{t.lName}</TableHeader>
+              <TableHeader>{t.lEmail}</TableHeader>
+              <TableHeader>{t.lJob}</TableHeader>
+              <TableHeader>{t.lFunction}</TableHeader>
+              <TableHeader>{t.lPhone}</TableHeader>
+              <TableHeader> </TableHeader>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data.contacts.map((c) => (
+              <TableRow key={c.id}>
+                <TableCell>
+                  <Flex direction="row" gap="extra-small" align="center">
+                    <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-1', objectId: Number(c.id) }}>
+                      {c.name}
+                    </CrmActionLink>
+                    {newTab('0-1', c.id)}
+                  </Flex>
+                </TableCell>
+                <TableCell>{c.email && c.email !== c.name ? c.email : '--'}</TableCell>
+                <TableCell>{c.jobtitle || '--'}</TableCell>
+                <TableCell>{c.jobfunction || '--'}</TableCell>
+                <TableCell>{c.phone || '--'}</TableCell>
+                <TableCell align="right">
+                  <Dropdown buttonText="⋯" buttonSize="xs" variant="secondary">
+                    <Dropdown.ButtonItem overlay={unlinkModal('contact', c.id, c.name)}>{t.unlink}</Dropdown.ButtonItem>
+                  </Dropdown>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       ) : (
         <Text variant="microcopy">ⓘ {t.noContactLinked}</Text>
       )}
-      <Divider />
       {footer}
     </Flex>
   );

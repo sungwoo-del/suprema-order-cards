@@ -2,32 +2,20 @@ import {
   Alert,
   Button,
   Divider,
-  EmptyState,
   Flex,
-  Link,
   LoadingSpinner,
   Panel,
   PanelBody,
   PanelSection,
-  Tag,
   Text,
   hubspot,
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
-import {
-  CompanySummary,
-  ContactLine,
-  Editor,
-  PORTAL,
-  T,
-  ecVersion,
-  getLang,
-  objUrl,
-  useEC,
-} from './EndCustomerShared.tsx';
+import { Editor, PORTAL, T, ecVersion, getLang, objUrl, useEC } from './EndCustomerShared.tsx';
+import { FooterLine, StatusRow, joinVals } from './UiKit.tsx';
 
-// End Customer(최종 고객사) — 오른쪽 사이드바 간략버전
-// 보기 위주 : 회사 요약 + 담당자 목록 · 선택 / 변경 / 추가 / 신규 생성은 Panel에서 처리
+// End Customer(최종 고객사) — 오른쪽 사이드바 (Ver.04 개편)
+// 1열 · 표 없음 · 편집/연결은 Panel (G7)
 hubspot.extend<'crm.record.sidebar'>(({ context, actions }) => (
   <EndCustomerSide context={context} actions={actions} />
 ));
@@ -51,7 +39,7 @@ const EndCustomerSide = ({ context, actions }: { context: any; actions: any }) =
   if (!data) return <LoadingSpinner label={t.loading} />;
 
   const panel = (
-    <Panel id={PANEL} title={t.select} width="md">
+    <Panel id={PANEL} title={t.title} width="md">
       <PanelBody>
         <PanelSection>
           <Editor
@@ -71,74 +59,60 @@ const EndCustomerSide = ({ context, actions }: { context: any; actions: any }) =
     </Panel>
   );
   const footer = (
-    <>
-      <Divider />
-      <Flex direction="row" justify="between" align="center">
-        <Text variant="microcopy">{ecVersion()}</Text>
-        <Link href={{ url: objUrl(portalId, '0-3', dealId), external: false }} preventDefault onClick={load}>
-          {t.refresh}
-        </Link>
-      </Flex>
-    </>
+    <FooterLine version={ecVersion()} refreshLabel={t.refresh} onRefresh={load} href={objUrl(portalId, '0-3', dealId)} />
   );
 
   const co = data.company;
-  if (!co && !data.contacts.length)
+  const n = data.contacts.length;
+  if (!co && !n)
     return (
       <Flex direction="column" gap="small">
-        <EmptyState title={t.emptyTitle} layout="vertical" imageWidth={80}>
-          <Text variant="microcopy">{t.emptyAction}</Text>
+        <StatusRow label={t.notLinked} variant="warning" />
+        <Text variant="microcopy">
+          {lang === 'ko' ? '최종 고객사가 없습니다. 필요한 조치 : [연결]을 누르세요.' : 'There is no end customer. Action required: click "Link".'}
+        </Text>
+        <Flex direction="row">
           <Button variant="primary" size="sm" overlay={panel}>
-            {t.select}
+            {lang === 'ko' ? '연결' : 'Link'}
           </Button>
-        </EmptyState>
+        </Flex>
         {footer}
       </Flex>
     );
 
-  const head = (label: string, action: string) => (
-    <Flex direction="row" justify="between" align="center">
-      <Text variant="microcopy" format={{ fontWeight: 'bold' }}>
-        {label}
-      </Text>
-      <Button size="xs" variant="secondary" overlay={panel}>
-        {action}
-      </Button>
-    </Flex>
-  );
-
   return (
     <Flex direction="column" gap="small">
+      <StatusRow
+        label={t.linked}
+        variant="success"
+        action={<Button size="xs" overlay={panel}>{t.edit}</Button>}
+      />
       {data.extraCompanies.length ? (
         <Alert title={lang === 'ko' ? '확인 필요' : 'Check'} variant="warning">
           {t.extra(data.extraCompanies.map((c) => c.name).join(', '))}
         </Alert>
       ) : null}
-      {head(lang === 'ko' ? '회사' : 'Company', co ? t.change : t.select)}
       {co ? (
-        <Flex direction="column" gap="extra-small">
+        <Flex direction="column" gap="flush">
           <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-2', objectId: Number(co.id) }}>
             {co.name}
           </CrmActionLink>
-          <Tag variant="success">End Customer</Tag>
-          <CompanySummary lang={lang} c={co} compact />
-          <Link href={{ url: objUrl(portalId, '0-2', co.id), external: true }}>{t.newTab}</Link>
+          <Text variant="microcopy">{joinVals(co.country, co.lifecycle, co.team) || co.domain || ''}</Text>
         </Flex>
       ) : (
         <Text variant="microcopy">ⓘ {t.noCompanyLinked}</Text>
       )}
       <Divider />
-      {head(`${lang === 'ko' ? '담당자' : 'Contacts'} (${data.contacts.length})`, t.addContact)}
-      {data.contacts.length ? (
+      <Text variant="microcopy" format={{ fontWeight: 'bold' }}>
+        {lang === 'ko' ? `담당자 ${n}` : `Contacts ${n}`}
+      </Text>
+      {n ? (
         data.contacts.map((c) => (
           <Flex key={c.id} direction="column" gap="flush">
-            <Flex direction="row" justify="between" align="center">
-              <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-1', objectId: Number(c.id) }}>
-                {c.name}
-              </CrmActionLink>
-              <Link href={{ url: objUrl(portalId, '0-1', c.id), external: true }}>↗</Link>
-            </Flex>
-            <Text variant="microcopy">{ContactLine(c) || '—'}</Text>
+            <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-1', objectId: Number(c.id) }}>
+              {c.name}
+            </CrmActionLink>
+            <Text variant="microcopy">{joinVals(c.jobtitle || c.jobfunction, c.email !== c.name ? c.email : '')}</Text>
           </Flex>
         ))
       ) : (
