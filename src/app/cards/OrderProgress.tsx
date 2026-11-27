@@ -7,8 +7,6 @@ import {
   Link,
   LoadingButton,
   LoadingSpinner,
-  Statistics,
-  StatisticsItem,
   Text,
   TextArea,
   hubspot,
@@ -156,12 +154,20 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
   } else if (cur === 'confirming' || cur === 'dispatched') {
     text = ko ? 'ERP 연동 대기 중입니다. I/F 개발 후 자동으로 진행됩니다.' : 'Waiting for ERP. It moves automatically after the interface is built.';
     body = (
-      <Statistics>
-        <StatisticsItem label="UniERP I/F" number={data.erp.unierp || '--'} />
-        <StatisticsItem label="D365 I/F" number={data.erp.d365 || '--'} />
-        <StatisticsItem label="SO No." number={data.erp.so || '--'} />
-        <StatisticsItem label={ko ? '출고' : 'Shipment'} number={data.erp.shipment || '--'} />
-      </Statistics>
+      <DescriptionList direction="row">
+        <DescriptionListItem label="UniERP I/F">
+          <Text>{data.erp.unierp || '--'}</Text>
+        </DescriptionListItem>
+        <DescriptionListItem label="D365 I/F">
+          <Text>{data.erp.d365 || '--'}</Text>
+        </DescriptionListItem>
+        <DescriptionListItem label="SO No.">
+          <Text>{data.erp.so || '--'}</Text>
+        </DescriptionListItem>
+        <DescriptionListItem label={ko ? '출고 상태' : 'Shipment'}>
+          <Text>{data.erp.shipment || '--'}</Text>
+        </DescriptionListItem>
+      </DescriptionList>
     );
   } else {
     text = cur === 'lost' ? (ko ? '취소된 주문입니다.' : 'This order is cancelled.') : ko ? '주문이 완료되었습니다.' : 'The order is complete.';

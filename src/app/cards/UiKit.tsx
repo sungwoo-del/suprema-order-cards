@@ -36,9 +36,9 @@ export const StatusRow = ({
   </Flex>
 );
 
-// 단계 진행 — HubSpot 기본 StepIndicator (단계 많으면 compact)
+// 단계 진행 — HubSpot 기본 StepIndicator (가운데 컬럼 전용, 단계 이름 모두 표시)
 export const Progress = ({ steps, current }: { steps: string[]; current: number }) => (
-  <StepIndicator stepNames={steps} currentStep={Math.max(0, current)} variant={steps.length > 4 ? 'compact' : 'default'} />
+  <StepIndicator stepNames={steps} currentStep={Math.max(0, current)} variant="default" />
 );
 
 // 조건 목록 — 충족(초록 체크) / 미충족(빈 원 + 굵게 + 조치)
