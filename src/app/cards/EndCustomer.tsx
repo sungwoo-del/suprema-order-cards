@@ -158,13 +158,6 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
       label={empty ? t.notLinked : t.linked}
       variant={empty ? 'warning' : 'success'}
       text={empty ? t.emptyLine : t.counts(co ? 1 : 0, n)}
-      action={
-        !empty && !editing ? (
-          <Button size="xs" onClick={() => setEditing(true)}>
-            <Icon name="edit" screenReaderText={t.edit} />
-          </Button>
-        ) : undefined
-      }
     />
   );
 
@@ -262,7 +255,29 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
 
       {/* 회사 — 기본 연결 카드와 같은 타일 (라벨과 붙여서) */}
       <Flex direction="column" gap="extra-small">
-        <SectionHead title={lang === 'ko' ? '회사' : 'Company'} />
+        <SectionHead
+          title={lang === 'ko' ? '회사' : 'Company'}
+          action={
+            <Button
+              size="xs"
+              onClick={() => {
+                setChangeCompany(true);
+                setEditing(true);
+              }}
+            >
+              <Icon
+                name="add"
+                screenReaderText={
+                  co
+                    ? t.changeCompany
+                    : lang === 'ko'
+                      ? '회사 추가'
+                      : 'Add company'
+                }
+              />
+            </Button>
+          }
+        />
         {co ? (
           <RecordTile
             typeId="0-2"

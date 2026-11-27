@@ -75,7 +75,7 @@ type GuideItem = {
 };
 
 // 카드 설명 옆 버전 표기 — 배포할 때 함께 올림
-const CARD_VERSION = '27';
+const CARD_VERSION = '28';
 const CARD_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 const CARD_STAGE = 'Beta';
