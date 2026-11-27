@@ -1,0 +1,25 @@
+# main 브랜치에 push하면 HubSpot 프로젝트를 업로드합니다.
+# 프로젝트 설정의 "성공적인 빌드 자동 배포"가 켜져 있으므로 빌드가 성공하면 자동 배포됩니다.
+# 필요한 저장소 Secrets : HUBSPOT_ACCOUNT_ID, HUBSPOT_PERSONAL_ACCESS_KEY
+name: HubSpot project upload
+on:
+  push:
+    branches:
+      - "main"
+  workflow_dispatch:
+env:
+  DEFAULT_ACCOUNT_ID: ${{ secrets.HUBSPOT_ACCOUNT_ID }}
+  DEFAULT_PERSONAL_ACCESS_KEY: ${{ secrets.HUBSPOT_PERSONAL_ACCESS_KEY }}
+concurrency:
+  group: hubspot-upload
+  cancel-in-progress: false
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Upload to HubSpot
+        uses: HubSpot/hubspot-project-actions/project-upload@v1.1.0
+        with:
+          project_dir: "./"
