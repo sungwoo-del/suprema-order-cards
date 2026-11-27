@@ -12,7 +12,7 @@ import {
   hubspot,
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
-import { PORTAL, callOD, editorUrl, getLang, isApprover, objUrl, odVersion, useOD, userName } from './OrderShared.tsx';
+import { PORTAL, callOD, editorUrl, getLang, objUrl, odVersion, useOD, userName } from './OrderShared.tsx';
 import { CheckList, FooterLine, Progress, StatusRow, TagVariant, joinVals, toast } from './UiKit.tsx';
 
 // Order Progress (주문 진행) — Order 가운데 카드 (Ver.01)
@@ -35,7 +35,6 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
   const ko = lang === 'ko';
   const dealId = String(context?.crm?.objectId ?? '');
   const portalId = context?.portal?.id ?? PORTAL;
-  const approver = isApprover(context);
   const { data, error, load, notify } = useOD('progress_load', dealId, lang, actions);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState('');
@@ -106,6 +105,7 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
       </>
     );
   } else if (cur === 'review') {
+    const approver = !!data.approver?.can;
     text = approver
       ? ko ? '필요한 조치 : 주문을 확인하고 승인 또는 반려하세요.' : 'Action required: approve or reject the order.'
       : ko ? '리전팀 Leader 승인을 기다리고 있습니다.' : 'Waiting for the region team leader approval.';
@@ -113,16 +113,20 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
       <>
         <TextArea name="od_note" label={ko ? '검토 의견 (반려 시 필수)' : 'Review note (required to reject)'} value={note} onChange={(v: string) => setNote(v)} />
         <Flex direction="row" gap="small">
-          <LoadingButton variant="primary" loading={busy === 'ok'} disabled={!!busy} onClick={() => run('ok', { action: 'review', decision: 'approve', note, approver, userName: userName(context) }, ko ? '승인했습니다. Order Processing으로 이동했습니다.' : 'Approved. Moved to Order Processing.')}>
+          <LoadingButton variant="primary" loading={busy === 'ok'} disabled={!!busy} onClick={() => run('ok', { action: 'review', decision: 'approve', note, userName: userName(context) }, ko ? '승인했습니다. Order Processing으로 이동했습니다.' : 'Approved. Moved to Order Processing.')}>
             {ko ? '승인' : 'Approve'}
           </LoadingButton>
-          <LoadingButton loading={busy === 'no'} disabled={!!busy || !note.trim()} onClick={() => run('no', { action: 'review', decision: 'reject', note, approver, userName: userName(context) }, ko ? '반려했습니다. PO Registration으로 되돌렸습니다.' : 'Rejected. Moved back to PO Registration.')}>
+          <LoadingButton loading={busy === 'no'} disabled={!!busy || !note.trim()} onClick={() => run('no', { action: 'review', decision: 'reject', note, userName: userName(context) }, ko ? '반려했습니다. PO Registration으로 되돌렸습니다.' : 'Rejected. Moved back to PO Registration.')}>
             {ko ? '반려' : 'Reject'}
           </LoadingButton>
         </Flex>
       </>
     ) : (
-      <Text variant="microcopy">{ko ? '승인 권한이 없습니다. 필요한 조치 : 리전팀 Leader에게 요청하세요.' : 'You do not have approval permission. Action required: ask the region team leader.'}</Text>
+      <Text variant="microcopy">
+        {!data.approver?.hasRule
+          ? ko ? '승인 팀이 지정되지 않았습니다. 필요한 조치 : 앱 설정에서 주문 검토 승인 팀을 지정하세요.' : 'No approval team is set. Action required: set the order review teams in the app settings.'
+          : ko ? `승인 권한이 없습니다. 필요한 조치 : 승인 팀(${data.approver.teams.join(', ')})에 요청하세요.` : `You do not have approval permission. Action required: ask the approval team (${data.approver.teams.join(', ')}).`}
+      </Text>
     );
   } else if (cur === 'processing') {
     const issued = data.pi === 'issued';

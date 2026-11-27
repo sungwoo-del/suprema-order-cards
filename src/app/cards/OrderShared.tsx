@@ -3,7 +3,7 @@ import { hubspot } from '@hubspot/ui-extensions';
 
 // Create Order · Order Progress 카드 공용 (docs/06_Order_프로세스.md)
 // bump.sh가 OD_VERSION / OD_UPDATED 를 올립니다.
-export const OD_VERSION = '03';
+export const OD_VERSION = '04';
 export const OD_UPDATED = '2026-11-27';
 export const OD_STAGE = 'Beta';
 export const PORTAL = 245822501;
@@ -14,11 +14,6 @@ export type Lang = 'en' | 'ko';
 export const getLang = (context: any): Lang =>
   String(context?.user?.locale || context?.user?.language || 'en').toLowerCase().startsWith('ko') ? 'ko' : 'en';
 
-// 검토 승인 권한 (임시 규칙) : 팀 이름에 Leader · admin · HubSpot Partner 포함
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isApprover = (context: any) =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (context?.user?.teams || []).some((t: any) => /leader|admin|hubspot partner/i.test(String(t?.name || '')));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const userName = (context: any) =>
   [context?.user?.firstName, context?.user?.lastName].filter(Boolean).join(' ') || context?.user?.email || '';

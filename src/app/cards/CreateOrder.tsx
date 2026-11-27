@@ -96,7 +96,7 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
     try {
       await callOD({ action: 'create_order', dealId, lang, dealname: name ?? `${data.dealname} - Order` });
       actions.closeOverlay(MODAL);
-      toast(actions, ko ? 'Order를 만들었습니다. Order 레코드에서 검토를 요청하세요.' : 'The order was created. Request review on the order record.');
+      toast(actions, ko ? 'Order를 만들고 Opportunity를 Closed Won으로 변경했습니다. 필요한 조치 : Order 레코드에서 검토를 요청하세요.' : 'The order was created and the opportunity was set to Closed Won. Action required: request review on the order record.');
       await load();
       notify();
     } catch (e) {
@@ -116,8 +116,8 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
           <Text variant="microcopy">
             ⓘ{' '}
             {ko
-              ? '주문 속성 · 라인아이템 · 연결(구매자 · End Customer 등)을 복사하고 활동 기록을 함께 봅니다. 만든 뒤에는 이 카드에서 다시 만들 수 없습니다.'
-              : 'Order properties, line items and associations (buyer, end customer, etc.) are copied and activities are shared. After it is created, it cannot be created again from this card.'}
+              ? '주문 속성 · 라인아이템 · 연결(구매자 · End Customer 등)을 복사하고 활동 기록을 함께 봅니다. 만들면 이 Opportunity는 Closed Won으로 바뀌고, 다시 만들 수 없습니다.'
+              : 'Order properties, line items and associations (buyer, end customer, etc.) are copied and activities are shared. This opportunity is set to Closed Won and the order cannot be created again.'}
           </Text>
         </Flex>
       </ModalBody>

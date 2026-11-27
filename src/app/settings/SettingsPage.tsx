@@ -271,6 +271,8 @@ const SettingsPage = ({ context, actions }: any) => {
 
       <Divider />
       <ConvertSettings lang={lang} actions={actions} />
+      <Divider />
+      <ReviewTeamsSettings lang={lang} actions={actions} />
     </Flex>
   );
 };
@@ -412,6 +414,77 @@ const ConvertSettings = ({ lang, actions }: { lang: Lang; actions: any }) => {
         </Button>
         <Button variant="secondary" onClick={() => setDraft({ ...info.defaults })} disabled={busy}>
           {t.defaults}
+        </Button>
+      </Flex>
+    </Flex>
+  );
+};
+
+// ── 주문 검토 승인 팀 (Order Progress 카드 · Under Review 승인/반려 권한)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ReviewTeamsSettings = ({ lang, actions }: { lang: Lang; actions: any }) => {
+  const ko = lang === 'ko';
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [saved, setSaved] = useState<string[]>([]);
+  const [sel, setSel] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await call('order_cards', { action: 'review_teams_get', lang });
+        setTeams(r.teams || []);
+        setSaved(r.allowed || []);
+        setSel(r.allowed || []);
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [lang]);
+  const dirty = [...sel].sort().join(',') !== [...saved].sort().join(',');
+  const save = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const r = await call('order_cards', { action: 'review_teams_save', teamIds: sel, lang });
+      setSaved(r.allowed || []);
+      actions?.addAlert?.({ type: 'success', message: ko ? '주문 검토 승인 팀을 저장했습니다.' : 'Order review teams saved.' });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (loading) return <LoadingSpinner label={ko ? '불러오는 중입니다...' : 'Loading...'} />;
+  return (
+    <Flex direction="column" gap="small">
+      <Heading>{ko ? '주문 검토 승인 팀 (Order Progress 카드)' : 'Order review approval teams (Order Progress card)'}</Heading>
+      <Text>
+        {ko
+          ? 'Order가 Under Review 단계일 때 승인 · 반려할 수 있는 팀을 고르세요(주 팀 · 보조 팀 모두 인정). 리전팀 Leader 팀을 지정하는 것을 권장합니다. 지정하지 않으면 아무도 승인할 수 없습니다.'
+          : 'Choose the teams that can approve or reject an order in Under Review (primary or secondary team). Region team leader teams are recommended. If none is set, nobody can approve.'}
+      </Text>
+      {error ? <Alert title={ko ? '오류' : 'Error'} variant="danger">{error}</Alert> : null}
+      <MultiSelect
+        label={ko ? '승인 팀' : 'Approval teams'}
+        placeholder={ko ? '팀을 선택하세요' : 'Select teams'}
+        options={teams.map((x) => ({ label: `${x.name} (${ko ? `${x.members}명` : `${x.members} members`})`, value: x.id }))}
+        value={sel}
+        onChange={(v) => setSel((v as string[]).map(String))}
+      />
+      <Text variant="microcopy">
+        {ko ? '저장된 승인 팀 : ' : 'Saved approval teams: '}
+        {saved.length ? saved.map((id) => teams.find((x) => x.id === id)?.name || id).join(', ') : ko ? '없음 (아무도 승인 불가)' : 'None (nobody can approve)'}
+      </Text>
+      <Flex direction="row" gap="small">
+        <Button variant="primary" onClick={save} disabled={!dirty || busy}>
+          {busy ? (ko ? '저장 중입니다...' : 'Saving...') : ko ? '저장' : 'Save'}
+        </Button>
+        <Button variant="secondary" onClick={() => setSel(saved)} disabled={!dirty || busy}>
+          {ko ? '되돌리기' : 'Revert'}
         </Button>
       </Flex>
     </Flex>

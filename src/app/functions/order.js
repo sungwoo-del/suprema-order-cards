@@ -9,6 +9,7 @@ const PARTNER = '2-267605328';
 const PARTNER_COMPANY = '2-268293662';
 const OPP_PIPELINE = '2607290060';
 const OPP_ORDER_STAGE = '4400078529'; // Opportunity · Order Confirm
+const OPP_WON_STAGE = '4400056041'; // Opportunity · Closed Won
 const ORDER_PIPELINE = '2607290061';
 const S = {
   po: '4400056046', // PO Registration
@@ -147,6 +148,47 @@ async function touch(dealId, tag) {
   try { await api(`/crm/v3/objects/deals/${dealId}`, { method: 'PATCH', body: { properties: { hd_card_sync: `${tag}:${Date.now()}` } } }); } catch (e) { /* 무시 */ }
 }
 
+
+// ---------- 앱 설정 (HubDB suprema_order_card_settings) : 검토 승인 팀 ----------
+const SETTINGS_TABLE = 'suprema_order_card_settings';
+const KEY_REVIEW_TEAMS = 'order_review_teams';
+async function readRows() {
+  try { return (await api(`/cms/v3/hubdb/tables/${SETTINGS_TABLE}/rows/draft?limit=500`)).results || []; }
+  catch (e) { if (e.status === 404) return []; throw e; }
+}
+async function readJson(key, fallback) {
+  const row = (await readRows()).find((r) => r.values && r.values.setting_key === key);
+  if (!row || !row.values.setting_value) return fallback;
+  try { return JSON.parse(row.values.setting_value); } catch (e) { return fallback; }
+}
+async function writeJson(key, value) {
+  let exists = true;
+  try { await api(`/cms/v3/hubdb/tables/${SETTINGS_TABLE}/draft`); } catch (e) { if (e.status === 404) exists = false; else throw e; }
+  if (!exists) {
+    await api('/cms/v3/hubdb/tables', { method: 'POST', body: {
+      name: SETTINGS_TABLE, label: 'Suprema Order Cards - Settings', useForPages: false, allowPublicApiAccess: false,
+      columns: [{ name: 'setting_key', label: 'Setting Key', type: 'TEXT' }, { name: 'setting_value', label: 'Setting Value', type: 'TEXT' }],
+    } });
+  }
+  const row = (await readRows()).find((r) => r.values && r.values.setting_key === key);
+  const values = { setting_key: key, setting_value: JSON.stringify(value) };
+  if (row) await api(`/cms/v3/hubdb/tables/${SETTINGS_TABLE}/rows/${row.id}/draft`, { method: 'PATCH', body: { values } });
+  else await api(`/cms/v3/hubdb/tables/${SETTINGS_TABLE}/rows`, { method: 'POST', body: { values } });
+  await api(`/cms/v3/hubdb/tables/${SETTINGS_TABLE}/draft/publish`, { method: 'POST' });
+}
+async function allTeams() {
+  const data = await api('/settings/v3/users/teams');
+  return (data.results || []).map((t) => ({ id: String(t.id), name: t.name, members: [...(t.userIds || []), ...(t.secondaryUserIds || [])].map(String) }));
+}
+// 사용자가 검토 승인 팀 소속인지 (주 팀 · 보조 팀 모두)
+async function approverInfo(userId) {
+  const allowed = (await readJson(KEY_REVIEW_TEAMS, [])).map(String);
+  if (!allowed.length) return { can: false, hasRule: false, teams: [] };
+  const teams = await allTeams();
+  const names = teams.filter((t) => allowed.includes(t.id)).map((t) => t.name);
+  return { can: teams.some((t) => allowed.includes(t.id) && t.members.includes(String(userId))), hasRule: true, teams: names };
+}
+
 // ---------- Create Order (Opportunity) ----------
 async function createLoad(p, lang) {
   const d = await readDeal(p.dealId);
@@ -233,13 +275,16 @@ async function createOrder(p, lang) {
   const assoc = await copyAssociations(p.dealId, newId);
   const lines = await copyLines(p.dealId, newId);
   const acts = await shareActivities(p.dealId, newId);
+  // Order를 만들면 Opportunity는 Closed Won
+  let oppClosed = true;
+  try { await api(`/crm/v3/objects/deals/${p.dealId}`, { method: 'PATCH', body: { properties: { dealstage: OPP_WON_STAGE } } }); } catch (e) { oppClosed = false; }
   await touch(p.dealId, 'order');
-  return { ok: true, id: newId, result: { props: Object.keys(props).length - 3, assoc, lines, acts } };
+  return { ok: true, id: newId, oppClosed, result: { props: Object.keys(props).length - 3, assoc, lines, acts } };
 }
 
 // ---------- Order Progress (Order) ----------
 const STEP_KEYS = ['po', 'review', 'processing', 'confirming', 'dispatched', 'closed'];
-async function progressLoad(p, lang) {
+async function progressLoad(p, lang, userId) {
   const d = await readDeal(p.dealId);
   if (d.pipeline !== ORDER_PIPELINE) return { ok: true, mode: 'none' };
   const pl = (await pipelines()).find((x) => x.id === ORDER_PIPELINE);
@@ -256,6 +301,7 @@ async function progressLoad(p, lang) {
     erp: { branch: d.selling_entity || '', target: d.erp_target || '', unierp: d.unierp_if_status || '', d365: d.d365_if_status || '',
       so: d.unierp_so_no || d.d365_so_no || '', po: d.d365_po_no || '', shipment: d.shipment_status || '' },
     source: await decorate(await linkedDeal(p.dealId, 'Source Opportunity', lang), lang),
+    approver: await approverInfo(userId),
   };
 }
 
@@ -274,8 +320,8 @@ async function requestReview(p, lang) {
   return { ok: true };
 }
 
-async function review(p, lang) {
-  if (!p.approver) throw new Error(M(lang, 'You do not have approval permission. Action required: ask the region team leader.', '승인 권한이 없습니다. 필요한 조치 : 리전팀 Leader에게 요청하세요.'));
+async function review(p, lang, userId) {
+  if (!(await approverInfo(userId)).can) throw new Error(M(lang, 'You do not have approval permission. Action required: ask the region team leader.', '승인 권한이 없습니다. 필요한 조치 : 리전팀 Leader에게 요청하세요.'));
   const d = await readDeal(p.dealId);
   if (d.dealstage !== S.review) throw new Error(M(lang, 'The order is not under review.', 'Under Review 단계가 아닙니다.'));
   const note = String(p.note || '').trim();
@@ -306,13 +352,19 @@ exports.main = async (context) => {
   const lang = p.lang === 'ko' ? 'ko' : 'en';
   try {
     if (Number(context.portalId) !== PORTAL_ID) throw new Error(M(lang, 'This account is not allowed.', '허용되지 않은 계정입니다.'));
+    const userId = context.user && context.user.userId;
+    switch (p.action) {
+      case 'review_teams_get': return { ok: true, teams: (await allTeams()).map((t) => ({ id: t.id, name: t.name, members: t.members.length })), allowed: (await readJson(KEY_REVIEW_TEAMS, [])).map(String) };
+      case 'review_teams_save': { const ids = (p.teamIds || []).map(String); await writeJson(KEY_REVIEW_TEAMS, ids); return { ok: true, allowed: ids }; }
+      default: break;
+    }
     if (!p.dealId) throw new Error(M(lang, 'There is no deal. Action required: open a deal record.', '거래가 없습니다. 필요한 조치 : 거래 레코드에서 여세요.'));
     switch (p.action) {
       case 'create_load': return await createLoad(p, lang);
       case 'create_order': return await createOrder(p, lang);
-      case 'progress_load': return await progressLoad(p, lang);
+      case 'progress_load': return await progressLoad(p, lang, userId);
       case 'request_review': return await requestReview(p, lang);
-      case 'review': return await review(p, lang);
+      case 'review': return await review(p, lang, userId);
       case 'pi': return await pi(p, lang);
       default: throw new Error(M(lang, `Unknown action: ${p.action}`, `알 수 없는 동작입니다 : ${p.action}`));
     }

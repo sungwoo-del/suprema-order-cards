@@ -14,9 +14,16 @@ import {
   LoadingSpinner,
   SearchInput,
   Select,
-  Tag,
+  StatusTag,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Text,
   Tile,
+  EmptyState,
   hubspot,
 } from '@hubspot/ui-extensions';
 import { SectionHead, joinVals } from './UiKit.tsx';
@@ -25,7 +32,7 @@ import { CrmActionButton } from '@hubspot/ui-extensions/crm';
 // End Customer(최종 고객사) 카드 공용 — 가운데 컬럼 카드 · 오른쪽 사이드바 카드가 함께 씀
 // 규칙 : 회사 1개 · 담당자 여러 명 · 둘 다 "End Customer" 연결 라벨
 // deploy.sh가 배포할 때 EC_VERSION / EC_UPDATED 를 자동으로 올립니다.
-export const EC_VERSION = '05';
+export const EC_VERSION = '06';
 export const EC_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const EC_STAGE = 'Beta';
@@ -297,11 +304,14 @@ export const Editor = ({
   openSearch?: boolean;
 }) => {
   const t = T[lang];
+  const ko = lang === 'ko';
   const [company, setCompany] = useState<Company | null>(data.company);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Company[] | null>(null);
-  // 회사 검색 목록은 회사가 없을 때나 [변경]을 눌렀을 때만 펼침
+  const [total, setTotal] = useState(0);
+  // 회사 검색 : 회사가 없거나 [변경]을 눌렀을 때 검색창 표시, 검색창을 누르거나 입력하면 아래에 목록 표시
   const [searchOpen, setSearchOpen] = useState(!data.company || !!openSearch);
+  const [listOpen, setListOpen] = useState(!!openSearch);
   const [searching, setSearching] = useState(false);
   const [list, setList] = useState<Contact[] | null>(null);
   const [checked, setChecked] = useState<string[]>(data.contacts.map((c) => c.id));
@@ -318,6 +328,7 @@ export const Editor = ({
       try {
         const r = await callEC({ action: 'search', dealId, lang, query: q, region: data.region });
         setResults(r.results);
+        setTotal(r.total || r.results.length);
       } catch (e) {
         setErr((e as Error).message);
       }
@@ -326,10 +337,10 @@ export const Editor = ({
     [dealId, lang, data.region],
   );
   useEffect(() => {
-    if (!searchOpen || query.length === 1) return;
-    const h = setTimeout(() => runSearch(query), query ? 400 : 0);
+    if (!searchOpen || !listOpen || query.length === 1) return;
+    const h = setTimeout(() => runSearch(query), query ? 300 : 0);
     return () => clearTimeout(h);
-  }, [query, runSearch, searchOpen]);
+  }, [query, runSearch, searchOpen, listOpen]);
 
   const loadContacts = useCallback(
     async (id: string) => {
@@ -353,9 +364,9 @@ export const Editor = ({
     setCompany(c);
     setResults(null);
     setSearchOpen(false);
+    setListOpen(false);
     setQuery('');
     setMode('');
-    // 다른 회사로 바꾸면 그 회사에 속하지 않은 담당자 선택은 풀림(목록을 받은 뒤 정리)
     if (!data.company || data.company.id !== c.id) setChecked([]);
   };
   const toggle = (id: string, on: boolean) =>
@@ -409,155 +420,226 @@ export const Editor = ({
   const f = (k: string) => form[k] || '';
   const setF = (k: string) => (v: string | number | boolean) => setForm((p) => ({ ...p, [k]: String(v) }));
   const row = compact ? 'column' : 'row';
-
-  const companyForm = (
-    <Flex direction="column" gap="small">
-      <Text format={{ fontWeight: 'bold' }}>{t.newCompany.replace('+ ', '')}</Text>
-      <Input name="name" label={t.name} value={f('name')} onChange={setF('name')} />
-      <Input name="domain" label={t.domain} placeholder="example.com" value={f('domain')} onChange={setF('domain')} />
-      <Flex direction={row} gap="small">
-        <Box1>
-          <Select name="account_country" label={t.country} options={data.options.country} value={f('account_country')} onChange={setF('account_country')} />
-        </Box1>
-        <Box1>
-          <Select name="industry" label={t.industry} options={data.options.industry} value={f('industry')} onChange={setF('industry')} />
-        </Box1>
-      </Flex>
-      <Text variant="microcopy">ⓘ {t.teamAuto}</Text>
-      <Flex direction="row" gap="small">
-        <Button size="sm" variant="primary" disabled={busy || !f('name') || !f('account_country')} onClick={create}>{t.create}</Button>
-        <Button size="sm" onClick={() => { setMode(''); setForm({}); }}>{t.cancel}</Button>
-      </Flex>
+  const formButtons = (ok: boolean) => (
+    <Flex direction="row" gap="small">
+      <LoadingButton size="sm" variant="primary" loading={busy} disabled={!ok} onClick={create}>
+        {t.create}
+      </LoadingButton>
+      <Button size="sm" onClick={() => { setMode(''); setForm({}); }}>{t.cancel}</Button>
     </Flex>
   );
+
+  const companyForm = (
+    <Tile>
+      <Flex direction="column" gap="small">
+        <Text format={{ fontWeight: 'demibold' }}>{ko ? '새 회사 만들기' : 'Create a company'}</Text>
+        <Input name="name" label={t.name} value={f('name')} onChange={setF('name')} />
+        <Input name="domain" label={t.domain} placeholder="example.com" value={f('domain')} onChange={setF('domain')} />
+        <Flex direction={row} gap="small">
+          <Box1>
+            <Select name="account_country" label={t.country} options={data.options.country} value={f('account_country')} onChange={setF('account_country')} />
+          </Box1>
+          <Box1>
+            <Select name="industry" label={t.industry} options={data.options.industry} value={f('industry')} onChange={setF('industry')} />
+          </Box1>
+        </Flex>
+        <Text variant="microcopy">ⓘ {t.teamAuto}</Text>
+        {formButtons(!!(f('name') && f('account_country')))}
+      </Flex>
+    </Tile>
+  );
   const contactForm = (
-    <Flex direction="column" gap="small">
-      <Text format={{ fontWeight: 'bold' }}>{t.newContact.replace('+ ', '')}</Text>
-      <Flex direction={row} gap="small">
-        <Box1><Input name="firstname" label={t.first} value={f('firstname')} onChange={setF('firstname')} /></Box1>
-        <Box1><Input name="lastname" label={t.last} value={f('lastname')} onChange={setF('lastname')} /></Box1>
+    <Tile>
+      <Flex direction="column" gap="small">
+        <Text format={{ fontWeight: 'demibold' }}>{ko ? `새 담당자 만들기 · ${company?.name || ''}` : `Create a contact · ${company?.name || ''}`}</Text>
+        <Flex direction={row} gap="small">
+          <Box1><Input name="firstname" label={t.first} value={f('firstname')} onChange={setF('firstname')} /></Box1>
+          <Box1><Input name="lastname" label={t.last} value={f('lastname')} onChange={setF('lastname')} /></Box1>
+        </Flex>
+        <Input name="email" label={t.email} placeholder="name@company.com" value={f('email')} onChange={setF('email')} />
+        <Flex direction={row} gap="small">
+          <Box1><Input name="jobtitle" label={t.jobtitle} value={f('jobtitle')} onChange={setF('jobtitle')} /></Box1>
+          <Box1><Input name="job_function" label={t.jobfunction} value={f('job_function')} onChange={setF('job_function')} /></Box1>
+        </Flex>
+        {formButtons(!!(f('firstname') && f('email')))}
       </Flex>
-      <Input name="email" label={t.email} placeholder="name@company.com" value={f('email')} onChange={setF('email')} />
-      <Flex direction={row} gap="small">
-        <Box1><Input name="jobtitle" label={t.jobtitle} value={f('jobtitle')} onChange={setF('jobtitle')} /></Box1>
-        <Box1><Input name="job_function" label={t.jobfunction} value={f('job_function')} onChange={setF('job_function')} /></Box1>
-      </Flex>
-      <Text variant="microcopy">ⓘ {company?.name}</Text>
-      <Flex direction="row" gap="small">
-        <Button size="sm" variant="primary" disabled={busy || !f('firstname') || !f('email')} onClick={create}>{t.create}</Button>
-        <Button size="sm" onClick={() => { setMode(''); setForm({}); }}>{t.cancel}</Button>
-      </Flex>
+    </Tile>
+  );
+
+  // 회사 검색 결과 — 표 (회사명 · 국가 · 라이프사이클 · 도메인 · 선택)
+  const shown = (results || []).slice(0, compact ? 6 : 8);
+  const resultTable = (
+    <Flex direction="column" gap="extra-small">
+      {searching && !results ? <LoadingSpinner size="xs" label={t.loading} /> : null}
+      {results && results.length === 0 ? (
+        <EmptyState title={ko ? '검색 결과가 없습니다' : 'No results'} layout="horizontal" imageWidth={60}>
+          <Text variant="microcopy">{t.noResults(data.region)}</Text>
+        </EmptyState>
+      ) : null}
+      {shown.length ? (
+        <Table bordered density="condensed">
+          <TableHead>
+            <TableRow>
+              <TableHeader>{ko ? '회사명' : 'Company'}</TableHeader>
+              {compact ? null : <TableHeader>{ko ? '국가' : 'Country'}</TableHeader>}
+              {compact ? null : <TableHeader>{ko ? '라이프사이클' : 'Lifecycle'}</TableHeader>}
+              <TableHeader>{compact ? (ko ? '국가 · 도메인' : 'Country · domain') : ko ? '도메인' : 'Domain'}</TableHeader>
+              <TableHeader> </TableHeader>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {shown.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell>
+                  <Link href={{ url: objUrl(PORTAL, '0-2', r.id), external: false }} preventDefault onClick={() => pickCompany(r)}>
+                    {r.name}
+                  </Link>
+                </TableCell>
+                {compact ? null : <TableCell>{r.country || '--'}</TableCell>}
+                {compact ? null : <TableCell>{r.lifecycle || '--'}</TableCell>}
+                <TableCell>{compact ? joinVals(r.country, r.domain) || '--' : r.domain || '--'}</TableCell>
+                <TableCell align="right">
+                  <Button size="xs" onClick={() => pickCompany(r)}>{ko ? '선택' : 'Select'}</Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : null}
+      {results && results.length ? (
+        <Flex direction="row" justify="between" align="center" gap="small" wrap="wrap">
+          <Text variant="microcopy">
+            {query
+              ? ko ? `검색 결과 ${total}건${total > shown.length ? ` 중 ${shown.length}건 표시 · 검색어를 더 입력하세요` : ''}` : `${total} results${total > shown.length ? `, showing ${shown.length}. Type more to narrow down` : ''}`
+              : ko ? `최근 수정 순 ${shown.length}건` : `${shown.length} recently updated`}
+          </Text>
+          <Link href={{ url: objUrl(PORTAL, '0-2', dealId), external: false }} preventDefault onClick={() => { setMode('company'); setForm({ name: query }); setListOpen(false); }}>
+            {ko ? '찾는 회사가 없나요? + 새 회사' : 'Not listed? + New company'}
+          </Link>
+        </Flex>
+      ) : null}
     </Flex>
   );
 
   // 다른 회사에서 이미 연결된 담당자도 목록에 함께 보여줌(체크 해제하면 저장 시 연결 해제)
   const listIds = new Set((list || []).map((c) => c.id));
   const outside = data.contacts.filter((c) => !listIds.has(c.id) && checked.includes(c.id));
+  const allContacts = [...(list || []), ...outside];
 
   return (
     <Flex direction="column" gap="medium">
-      {err ? (
-        <Alert title={t.error} variant="danger">{err}</Alert>
-      ) : null}
-      {note ? (
-        <Alert title={lang === 'ko' ? '알림' : 'Notice'} variant="info">{note}</Alert>
-      ) : null}
+      {err ? <Alert title={t.error} variant="danger">{err}</Alert> : null}
+      {note ? <Alert title={ko ? '알림' : 'Notice'} variant="info">{note}</Alert> : null}
 
       {/* ① 회사 */}
       <SectionHead
         title={t.stepCompany}
-        action={company && !searchOpen ? (
-          <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setResults(null); setSearchOpen(true); }}>
-            {t.change}
-          </Link>
-        ) : undefined}
+        action={
+          company && !searchOpen ? (
+            <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setResults(null); setSearchOpen(true); setListOpen(true); }}>
+              {t.change}
+            </Link>
+          ) : company && searchOpen ? (
+            <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setSearchOpen(false); setListOpen(false); setQuery(''); }}>
+              {t.cancel}
+            </Link>
+          ) : undefined
+        }
       />
       {company && !searchOpen ? (
         <Tile compact>
           <Flex direction="row" gap="small" align="center" wrap="wrap">
             <Text format={{ fontWeight: 'demibold' }}>{company.name}</Text>
             <Text variant="microcopy">{joinVals(company.country, company.lifecycle, company.domain)}</Text>
-            {changedCompany ? <Text variant="microcopy">· {t.pending}</Text> : null}
+            {changedCompany ? <StatusTag variant="warning">{t.pending}</StatusTag> : null}
           </Flex>
         </Tile>
       ) : (
-        <Flex direction="column" gap="extra-small">
-          <Flex direction="row" gap="small" align="end">
-            <Box1>
-              <SearchInput name="ec_search" label={t.companyField} placeholder={t.searchPh} value={query} onInput={(v: string) => setQuery(v)} onChange={(v: string) => setQuery(v)} />
-            </Box1>
-            <Button size="sm" onClick={() => { setMode('company'); setForm({ name: query }); }}>{t.newCompany}</Button>
-          </Flex>
-          <Flex direction="row" gap="extra-small" align="center">
-            {data.region ? <Tag variant="info">{t.filter(data.region)}</Tag> : null}
-            <Text variant="microcopy">{data.region ? t.filterHint(data.region) : t.noFilter}</Text>
-          </Flex>
-          {searching ? <LoadingSpinner size="xs" label={t.loading} /> : null}
-          {!searching && results && results.length === 0 ? (
-            <Text variant="microcopy">ⓘ {t.noResults(data.region)}</Text>
-          ) : null}
-          {!searching && results && results.length ? (
-            <Flex direction="column" gap="flush">
-              {results.map((r) => (
-                <Flex key={r.id} direction="row" justify="between" align="center" gap="small">
-                  <Link href={{ url: objUrl(PORTAL, '0-2', r.id), external: false }} preventDefault onClick={() => pickCompany(r)}>
-                    {r.name}
-                  </Link>
-                  <Text variant="microcopy">
-                    {[r.domain, r.country, r.lifecycle].filter(Boolean).join(' · ')}
-                  </Text>
-                </Flex>
-              ))}
-            </Flex>
-          ) : null}
-          {company ? (
-            <Flex direction="row" justify="end">
-              <Button size="xs" onClick={() => { setResults(null); setQuery(''); setSearchOpen(false); }}>{t.cancel}</Button>
-            </Flex>
-          ) : null}
+        <Flex direction="column" gap="small">
+          <SearchInput
+            name="ec_search"
+            label=""
+            placeholder={data.region ? (ko ? `${data.region} 회사 검색 · 회사명 또는 도메인` : `Search ${data.region} companies · name or domain`) : t.searchPh}
+            value={query}
+            clearable
+            onFocus={() => setListOpen(true)}
+            onInput={(v: string) => { setQuery(v); setListOpen(true); }}
+            onChange={(v: string) => setQuery(v)}
+          />
+          <Text variant="microcopy">{data.region ? t.filterHint(data.region) : t.noFilter}</Text>
+          {listOpen ? resultTable : null}
         </Flex>
       )}
       {mode === 'company' ? companyForm : null}
-      {changedCompany && data.company ? <Text variant="microcopy">ⓘ {t.companyChange}</Text> : null}
 
       {/* ② 담당자 */}
       <SectionHead
         title={t.stepContacts}
-        action={company && list !== null ? (
-          <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setMode('contact'); setForm({}); }}>
-            {t.newContact}
-          </Link>
-        ) : undefined}
+        action={
+          company && list !== null && mode !== 'contact' ? (
+            <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setMode('contact'); setForm({}); }}>
+              {t.newContact}
+            </Link>
+          ) : undefined
+        }
       />
       {!company ? (
         <Text variant="microcopy">ⓘ {t.pickCompanyFirst}</Text>
       ) : list === null ? (
         <LoadingSpinner size="xs" label={t.loading} />
-      ) : (
+      ) : !allContacts.length ? (
+        <Text variant="microcopy">ⓘ {t.noContacts}</Text>
+      ) : compact ? (
         <Flex direction="column" gap="extra-small">
-          <Text variant="microcopy">{list.length ? t.contactsOf(list.length) : t.noContacts}</Text>
-          {[...list, ...outside].map((c) => (
+          {allContacts.map((c) => (
             <Checkbox
               key={c.id}
               name={`ec_${c.id}`}
               checked={checked.includes(c.id)}
               onChange={(on: boolean) => toggle(c.id, on)}
-              description={[c.jobtitle || c.jobfunction, c.email !== c.name ? c.email : '', listIds.has(c.id) ? '' : t.otherLinked].filter(Boolean).join(' · ')}
+              description={joinVals(c.jobtitle || c.jobfunction, c.email !== c.name ? c.email : '', listIds.has(c.id) ? '' : t.otherLinked)}
             >
               {c.name}
             </Checkbox>
           ))}
         </Flex>
+      ) : (
+        <Table bordered density="condensed">
+          <TableHead>
+            <TableRow>
+              <TableHeader width="min"> </TableHeader>
+              <TableHeader>{t.lName}</TableHeader>
+              <TableHeader>{t.lEmail}</TableHeader>
+              <TableHeader>{t.lJob}</TableHeader>
+              <TableHeader>{t.lFunction}</TableHeader>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {allContacts.map((c) => (
+              <TableRow key={c.id}>
+                <TableCell width="min">
+                  <Checkbox name={`ec_${c.id}`} checked={checked.includes(c.id)} onChange={(on: boolean) => toggle(c.id, on)} aria-label={c.name}>
+                    {' '}
+                  </Checkbox>
+                </TableCell>
+                <TableCell>{listIds.has(c.id) ? c.name : `${c.name} · ${t.otherLinked}`}</TableCell>
+                <TableCell>{c.email && c.email !== c.name ? c.email : '--'}</TableCell>
+                <TableCell>{c.jobtitle || '--'}</TableCell>
+                <TableCell>{c.jobfunction || '--'}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
       {mode === 'contact' ? contactForm : null}
       <Divider />
       <Flex direction="row" gap="small" align="center" wrap="wrap">
-        <LoadingButton variant="primary" loading={busy} disabled={!dirty} onClick={save}>
+        <LoadingButton variant="primary" loading={busy && mode === ''} disabled={!dirty || mode !== ''} onClick={save}>
           {t.saveN(company ? 1 : 0, checked.length)}
         </LoadingButton>
         {onCancel ? <Button onClick={onCancel}>{t.cancel}</Button> : null}
+        <Text variant="microcopy">{dirty ? t.saveHint : ko ? '변경 사항이 없습니다.' : 'There are no changes.'}</Text>
       </Flex>
-      <Text variant="microcopy">ⓘ {t.saveHint}</Text>
     </Flex>
   );
 };
