@@ -3,7 +3,7 @@ import { Alert, Flex, Icon, Link, Text, hubspot } from '@hubspot/ui-extensions';
 
 // 오른쪽 컬럼 카드 4종 공용 — 버전 표기 · 서버 호출 · 공통 문구
 // deploy.sh가 배포할 때 SIDEBAR_VERSION / SIDEBAR_UPDATED 를 자동으로 올립니다.
-export const SIDEBAR_VERSION = '25';
+export const SIDEBAR_VERSION = '26';
 export const SIDEBAR_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const SIDEBAR_STAGE = 'Beta';

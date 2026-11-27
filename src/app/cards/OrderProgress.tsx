@@ -181,7 +181,7 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
               <IconText name="signature">{ko ? 'PI 발행 처리 (수동)' : 'Mark PI issued (manual)'}</IconText>
             </LoadingButton>
           ) : (
-            <LoadingButton variant="primary" loading={busy === 'pq'} disabled={!!busy} onClick={() => run('pq', { action: 'pi', step: 'quote' }, ko ? 'PI 견적서를 만들었습니다. 견적서를 열어 확인 후 게시하세요.' : 'PI quote created. Open it, review, and publish.')}>
+            <LoadingButton variant="primary" loading={busy === 'pq'} disabled={!!busy} onClick={() => run('pq', { action: 'pi', step: 'quote', sender: { first: context.user?.firstName, last: context.user?.lastName, email: context.user?.email } }, ko ? 'PI 견적서를 만들었습니다. 견적서를 열어 확인 후 게시하세요.' : 'PI quote created. Open it, review, and publish.')}>
               <IconText name="quote">{ko ? 'PI 견적서 만들기' : 'Create PI quote'}</IconText>
             </LoadingButton>
           )}

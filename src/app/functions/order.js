@@ -404,6 +404,15 @@ async function createPiQuote(p, lang) {
   const properties = { hs_title: `PI - ${(full.properties || {}).dealname || p.dealId}`, hs_expiration_date: exp, hs_template_type: 'CPQ_QUOTE', hs_language: 'en' };
   if (d.deal_currency_code) properties.hs_currency = d.deal_currency_code;
   if (d.hubspot_owner_id) properties.hubspot_owner_id = d.hubspot_owner_id;
+  // 견적서 판매자(Sales Manager) = 거래 소유자, 없으면 버튼을 누른 사용자
+  let sender = null;
+  if (d.hubspot_owner_id) { try { const o = await api(`/crm/v3/owners/${d.hubspot_owner_id}`); sender = { first: o.firstName, last: o.lastName, email: o.email }; } catch (e) { /* 소유자 조회 실패 시 사용자 */ } }
+  if (!sender && p.sender) sender = p.sender;
+  if (sender) {
+    if (sender.first) properties.hs_sender_firstname = sender.first;
+    if (sender.last) properties.hs_sender_lastname = sender.last;
+    if (sender.email) properties.hs_sender_email = sender.email;
+  }
   const tplAssoc = templateId ? [{ to: { id: templateId }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 286 }] }] : [];
   let quote;
   try { quote = await api('/crm/v3/objects/quotes', { method: 'POST', body: { properties, associations: tplAssoc } }); }
