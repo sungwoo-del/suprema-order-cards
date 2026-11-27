@@ -122,7 +122,7 @@ async function checks(dealId, d, lang, { forCreate }) {
   const lines = await lineItems(dealId);
   const zero = lines.filter((l) => !(Number(l.price) > 0)).length;
   const internal = d.buyer_type === 'internal_entity';
-  const buyerOk = internal || !!(REGIONS.includes(region) && d[`partner_${region}`] && d[`partner_owner_${region}`]);
+  const buyerOk = internal || !!(REGIONS.includes(region) && d[`partner_${region}`]); // 구매 담당자는 선택값
   const list = [];
   if (forCreate) list.push({ key: 'stage', ok: d.dealstage === OPP_ORDER_STAGE, text: M(lang, 'Opportunity stage: Order Confirm', 'Opportunity 단계 : Order Confirm') });
   list.push(

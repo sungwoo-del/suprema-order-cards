@@ -74,7 +74,7 @@ type GuideItem = {
 };
 
 // 카드 설명 옆 버전 표기 — 배포할 때 함께 올림
-const CARD_VERSION = '13';
+const CARD_VERSION = '14';
 const CARD_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 const CARD_STAGE = 'Beta';
@@ -151,6 +151,7 @@ const MSG = {
     shipHint: 'Required for Dropship — customer ship-to address.',
     clearDate: 'Clear',
     noContact: 'No contact',
+    optional: ' (optional)',
     branchEntity: 'Branch entity',
     stepHint: 'Click a step to open it · Line items open the editor',
     tagEditNow: 'Editable · saved right away',
@@ -276,6 +277,7 @@ const MSG = {
     shipHint: '3자거래(Dropship)는 필수 — 고객사 배송지를 입력하세요.',
     clearDate: '지우기',
     noContact: '담당자 없음',
+    optional: ' (선택)',
     branchEntity: '지사 법인',
     stepHint: '단계를 누르면 해당 설정이 열립니다 · 라인아이템은 편집기로 이동',
     tagEditNow: '편집 가능 · 바로 저장',
@@ -429,7 +431,7 @@ const money = (v?: string, cur?: string) =>
 const STEP_GROUPS = ['basics', 'buyer', 'order_type', 'price'];
 const stepDone = (v: Vals, count: number) => [
   !!(v.buyer_type && v.partner_region_select),
-  v.buyer_type === 'internal_entity' || !!(v.buyer_company && v.buyer_contact),
+  v.buyer_type === 'internal_entity' || !!v.buyer_company, // 구매 담당자(Buyer Contact)는 선택값
   !!(v.order_type && v.erp_sales_type),
   !!v.pricebook_select,
   count > 0,
@@ -712,9 +714,7 @@ const OrderSetup = ({ context, actions }: any) => {
     : firstOpen === 0
       ? t.next.basics
       : firstOpen === 1
-        ? saved.buyer_company
-          ? t.next.contact
-          : t.next.company
+        ? t.next.company
         : firstOpen === 2
           ? t.next.orderType
           : firstOpen === 3
@@ -1127,7 +1127,10 @@ const OrderSetup = ({ context, actions }: any) => {
             라벨 ↔ 입력 필드는 붙이고(flush), 그만큼 라벨 위에 여백 */}
         <Flex direction="column" gap="flush">
           <Spacer size="xs" />
-          <Text>{f.label}</Text>
+          <Text>
+            {f.label}
+            {f.name === 'buyer_contact' ? t.optional : ''}
+          </Text>
           {input}
         </Flex>
         {hintFor(f)}

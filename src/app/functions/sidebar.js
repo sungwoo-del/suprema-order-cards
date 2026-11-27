@@ -79,7 +79,7 @@ async function summary(p, lang) {
   const count = Number(d.hs_num_of_associated_line_items || 0);
   const done = [
     !!(d.buyer_type && d.partner_region_select),
-    internal || !!(d[`partner_${region}`] && d[`partner_owner_${region}`]),
+    internal || !!d[`partner_${region}`], // 구매 담당자는 선택값
     !!(d.order_type && d.erp_sales_type),
     !!d.pricebook_select,
     count > 0,
