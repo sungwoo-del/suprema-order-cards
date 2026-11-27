@@ -18,9 +18,4 @@ bump src/app/cards/EndCustomerShared.tsx EC
 bump src/app/cards/ConvertShared.tsx CV
 bump src/app/cards/OrderShared.tsx OD
 
-# 앱 이름 = HubSpot 카드 하단 "…에 의해 구동됨" 문구 → "Suprema(YYYY-MM-DD / Ver.NN Beta) - HelloDigital"
-APP=src/app/app-hsmeta.json
-cur=$(grep -E '"name": "Suprema\(' "$APP" | sed -E 's/.*Ver\.([0-9]+).*/\1/')
-nxt=$(printf "%02d" $((10#${cur:-17} + 1)))
-sed -E -i.bak "s/\"name\": \"Suprema[^\"]*\"/\"name\": \"Suprema($TODAY \/ Ver.$nxt Beta) - HelloDigital\"/" "$APP" && rm -f "$APP.bak"
-echo "▶ APP Ver.$nxt ($TODAY)"
+# 앱 이름은 "HelloDigital" 고정 — 카드 하단에 "HelloDigital에 의해 구동됨"으로 표시
