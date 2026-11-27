@@ -3,7 +3,7 @@
   "type": "app",
   "config": {
     "description": "Suprema deal order setup cards (buyer, order type, price book, order route)",
-    "name": "HelloDigital ver.21_B",
+    "name": "HelloDigital ver.22_B",
     "distribution": "private",
     "auth": {
       "type": "static",
@@ -42,7 +42,11 @@
         "https://api.hubapi.com"
       ],
       "iframe": [],
-      "img": []
+      "img": [
+        "https://na1.hubspot-logos.com",
+        "https://na2.hubspot-logos.com",
+        "https://eu1.hubspot-logos.com"
+      ]
     },
     "support": {
       "supportEmail": "support@hellodigital.co.kr",

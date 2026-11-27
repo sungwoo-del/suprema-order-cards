@@ -9,7 +9,7 @@ const LABEL = 'End Customer';
 const TEAMS = ['APAC', 'ME', 'LATAM', 'UK', 'US', 'IN', 'JP', 'EU', 'KBS'];
 // Owner Branch → Recommended Team (거래 소유자 팀으로 리전을 못 찾을 때만 사용, HQ는 필터 없음)
 const BRANCH_TEAM = { eu: 'EU', uk: 'UK', us: 'US', jp: 'JP', in: 'IN', me: 'ME', latam: 'LATAM' };
-const CO_PROPS = ['name', 'domain', 'website', 'account_country', 'industry', 'lifecyclestage', 'recommended_team', 'hubspot_owner_id'];
+const CO_PROPS = ['name', 'domain', 'website', 'hs_logo_url', 'account_country', 'industry', 'lifecyclestage', 'recommended_team', 'hubspot_owner_id'];
 const CT_PROPS = ['firstname', 'lastname', 'email', 'jobtitle', 'job_function', 'phone', 'mobilephone'];
 const M = (lang, en, ko) => (lang === 'ko' ? ko : en);
 
@@ -102,7 +102,7 @@ async function regionOf(dealId) {
 
 function companyView(c, maps, owner) {
   return {
-    id: c.id, name: c.name || '', domain: c.domain || '', website: c.website || c.domain || '',
+    id: c.id, name: c.name || '', domain: c.domain || '', website: c.website || c.domain || '', logo: c.hs_logo_url || '',
     country: lab(maps, 'account_country', c.account_country), industry: lab(maps, 'industry', c.industry),
     lifecycle: lab(maps, 'lifecyclestage', c.lifecyclestage), team: c.recommended_team || '', owner: owner || '',
   };

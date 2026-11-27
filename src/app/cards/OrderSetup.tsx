@@ -41,6 +41,7 @@ import {
   hubspot,
 } from '@hubspot/ui-extensions';
 import { getLang } from './LockStatus.tsx';
+import { RefreshLink } from './UiKit.tsx';
 
 type Lang = 'en' | 'ko';
 type Opt = { label: string; value: string };
@@ -74,7 +75,7 @@ type GuideItem = {
 };
 
 // 카드 설명 옆 버전 표기 — 배포할 때 함께 올림
-const CARD_VERSION = '22';
+const CARD_VERSION = '23';
 const CARD_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 const CARD_STAGE = 'Beta';
@@ -1596,31 +1597,29 @@ const OrderSetup = ({ context, actions }: any) => {
 
       <Divider />
 
-      {/* 하단 — 새로고침 / 우측 끝 라인아이템 초기화 */}
+      {/* 하단 — 왼쪽 라인아이템 초기화 · 오른쪽 새로고침 아이콘 (다른 카드와 같은 하단 줄) */}
       <Flex direction="row" justify="between" align="center">
-        <Flex direction="row" gap="small" align="center">
-          <Button
-            variant="secondary"
-            size="xs"
-            disabled={!!savingGroup}
-            onClick={async () => {
-              setLoading(true);
-              await load();
-            }}
-          >
-            <Icon name="refresh" screenReaderText={t.refresh} />
-          </Button>
-        </Flex>
-        {hasItems && (
-          <Button
-            variant="destructive"
-            size="xs"
-            disabled={!!savingGroup}
-            overlay={clearModal}
-          >
-            {t.resetBtn}
-          </Button>
-        )}
+        <Box flex="none">
+          {hasItems ? (
+            <Button
+              variant="destructive"
+              size="xs"
+              disabled={!!savingGroup}
+              overlay={clearModal}
+            >
+              {t.resetBtn}
+            </Button>
+          ) : null}
+        </Box>
+        <RefreshLink
+          label={t.refresh}
+          href={`https://app-na2.hubspot.com/contacts/${portalId}/record/0-3/${dealId}`}
+          onRefresh={async () => {
+            if (savingGroup) return;
+            setLoading(true);
+            await load();
+          }}
+        />
       </Flex>
     </Flex>
   );

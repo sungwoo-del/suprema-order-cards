@@ -5,6 +5,7 @@ import {
   Button,
   Flex,
   Icon,
+  Image,
   Link,
   LoadingSpinner,
   Modal,
@@ -16,6 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Tag,
   Text,
   Tile,
   hubspot,
@@ -204,6 +206,14 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
         {co ? (
           <Tile compact>
             <Flex direction="row" align="start" gap="small">
+              {/* 회사 로고 (HubSpot 회사 로고 · 없으면 머리글자) */}
+              <Box flex="none">
+                {co.logo ? (
+                  <Image src={co.logo} alt={co.name} width={40} height={40} />
+                ) : (
+                  <Tag variant="default">{(co.name || '?').slice(0, 2).toUpperCase()}</Tag>
+                )}
+              </Box>
               <Box flex={1}>
                 <Flex direction="column" gap="extra-small">
                   <Flex direction="row" gap="small" align="center">
@@ -266,12 +276,14 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
         />
         {n ? (
           // HubSpot 기본 연결 목록 (End Customer 라벨만) — 해제는 [편집]에서
-          <CrmAssociationPivot
-            key={`ec-pivot-${pivotKey}`}
-            objectTypeId="0-1"
-            associationLabels={['End Customer']}
-            maxAssociations={10}
-          />
+          <Tile compact>
+            <CrmAssociationPivot
+              key={`ec-pivot-${pivotKey}`}
+              objectTypeId="0-1"
+              associationLabels={['End Customer']}
+              maxAssociations={10}
+            />
+          </Tile>
         ) : (
           <Text variant="microcopy">ⓘ {t.noContactLinked}</Text>
         )}
