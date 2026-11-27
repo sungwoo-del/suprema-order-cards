@@ -1,5 +1,5 @@
 import React from 'react';
-import { Divider, Flex, Link, Tag, Text } from '@hubspot/ui-extensions';
+import { Box, Divider, Flex, Link, Tag, Text } from '@hubspot/ui-extensions';
 
 // 앱카드 공통 UI — docs/05_UI_UX_지침.md (G1 구조 · G4 상태)
 // 맨 위 상태 줄 : 상태 태그 1개 + 한 줄 설명 + (오른쪽) 머리글 동작
@@ -18,12 +18,14 @@ export const StatusRow = ({
   text?: React.ReactNode;
   action?: React.ReactNode;
 }) => (
-  <Flex direction="row" justify="between" align="center" gap="small" wrap="wrap">
-    <Flex direction="row" gap="small" align="center" wrap="wrap">
-      <Tag variant={variant}>{label}</Tag>
-      {text ? <Text variant="microcopy">{text}</Text> : null}
-    </Flex>
-    {action || null}
+  <Flex direction="row" justify="between" align="center" gap="small">
+    <Box flex={1}>
+      <Flex direction="row" gap="small" align="center" wrap="wrap">
+        <Tag variant={variant}>{label}</Tag>
+        {text ? <Text variant="microcopy">{text}</Text> : null}
+      </Flex>
+    </Box>
+    {action ? <Box flex="none">{action}</Box> : null}
   </Flex>
 );
 
@@ -51,9 +53,11 @@ export const FooterLine = ({
 
 // 소제목 + (오른쪽) 동작
 export const SectionHead = ({ title, action }: { title: string; action?: React.ReactNode }) => (
-  <Flex direction="row" justify="between" align="center">
-    <Text format={{ fontWeight: 'demibold' }}>{title}</Text>
-    {action || null}
+  <Flex direction="row" justify="between" align="center" gap="small">
+    <Box flex={1}>
+      <Text format={{ fontWeight: 'demibold' }}>{title}</Text>
+    </Box>
+    {action ? <Box flex="none">{action}</Box> : null}
   </Flex>
 );
 
