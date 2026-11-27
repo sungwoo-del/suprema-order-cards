@@ -32,7 +32,7 @@ import { CrmActionButton } from '@hubspot/ui-extensions/crm';
 // End Customer(최종 고객사) 카드 공용 — 가운데 컬럼 카드 · 오른쪽 사이드바 카드가 함께 씀
 // 규칙 : 회사 1개 · 담당자 여러 명 · 둘 다 "End Customer" 연결 라벨
 // deploy.sh가 배포할 때 EC_VERSION / EC_UPDATED 를 자동으로 올립니다.
-export const EC_VERSION = '25';
+export const EC_VERSION = '26';
 export const EC_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const EC_STAGE = 'Beta';
@@ -54,7 +54,8 @@ export const callEC = async (parameters: any) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const res: any = await hubspot.serverless('end_customer', { parameters });
   if (!res) throw new Error('Serverless function error');
-  if (res.ok === false) throw new Error(res.error || 'Serverless function error');
+  if (res.ok === false)
+    throw new Error(res.error || 'Serverless function error');
   return res;
 };
 
@@ -81,7 +82,10 @@ export interface Contact {
   jobfunction?: string;
   phone?: string;
 }
-export interface Opt { label: string; value: string }
+export interface Opt {
+  label: string;
+  value: string;
+}
 export interface EcData {
   region: string;
   teamName: string;
@@ -106,19 +110,20 @@ export const T = {
     notSet: 'Not selected',
     searchPh: 'Search by company name or domain',
     filter: (r: string) => `Recommended Team = ${r}`,
-    filterHint: (r: string) => `Only ${r} companies are shown (deal owner team).`,
-    noFilter:
-      'The deal owner team has no region. All companies are shown.',
+    filterHint: (r: string) =>
+      `Only ${r} companies are shown (deal owner team).`,
+    noFilter: 'The deal owner team has no region. All companies are shown.',
     noResults: (r: string) =>
       r
-        ? `There are no ${r} companies. Action required: create one with "New company".`
-        : 'There are no matching companies. Action required: create one with "New company".',
-    newCompany: 'New company',
-    newContact: 'New contact',
+        ? `There are no ${r} companies. Action required: create one with "Create new company".`
+        : 'There are no matching companies. Action required: create one with "Create new company".',
+    newCompany: 'Create new company',
+    newContact: 'Create new contact',
     pickCompanyFirst: 'Select a company first.',
-    contactsOf: (n: number) => `${n} contacts linked to this company · select one or more`,
+    contactsOf: (n: number) =>
+      `${n} contacts linked to this company · select one or more`,
     noContacts:
-      'There are no contacts linked to this company. Action required: create one with "New contact".',
+      'There are no contacts linked to this company. Action required: create one with "Create new contact".',
     otherLinked: 'Linked from another company',
     saveHint:
       'You can save with only the company or only contacts. Both are linked with the "End Customer" label.',
@@ -138,8 +143,10 @@ export const T = {
     jobtitle: 'Job title',
     jobfunction: 'Job function',
     teamAuto: 'Recommended Team is set from #Country automatically.',
-    dupCompany: (n: string) => `A company with the same domain already exists: ${n}. It has been selected.`,
-    dupContact: (n: string) => `A contact with the same email already exists: ${n}. It has been selected.`,
+    dupCompany: (n: string) =>
+      `A company with the same domain already exists: ${n}. It has been selected.`,
+    dupContact: (n: string) =>
+      `A contact with the same email already exists: ${n}. It has been selected.`,
     preview: 'Preview',
     newTab: 'New tab',
     change: 'Change',
@@ -148,9 +155,11 @@ export const T = {
     select: 'Select end customer',
     emptyTitle: 'There is no end customer.',
     emptyAction: 'Action required: select the end customer.',
-    noContactLinked: 'There are no linked contacts. Action required: add one with "Add contact".',
+    noContactLinked:
+      'There are no linked contacts. Action required: add one with "Add contact".',
     noCompanyLinked: 'There is no end customer company.',
-    extra: (n: string) => `More than one company has the End Customer label (${n}). Action required: keep one with "Change".`,
+    extra: (n: string) =>
+      `More than one company has the End Customer label (${n}). Action required: keep one with "Change".`,
     lCountry: '#Country',
     lIndustry: 'Industry',
     lLifecycle: 'Lifecycle Stage',
@@ -173,7 +182,8 @@ export const T = {
     openTab: 'Open in new tab',
     changeCompany: 'Change company',
     lName: 'Name',
-    emptyLine: 'There is no end customer. Action required: search for the company and link it.',
+    emptyLine:
+      'There is no end customer. Action required: search for the company and link it.',
     pending: 'Applied on save',
   },
   ko: {
@@ -191,20 +201,23 @@ export const T = {
     searchPh: '회사명 · 도메인으로 검색하세요',
     filter: (r: string) => `Recommended Team = ${r}`,
     filterHint: (r: string) => `${r} 회사만 표시됩니다 (거래 소유자 팀 기준).`,
-    noFilter: '거래 소유자 팀의 리전을 확인할 수 없습니다. 전체 회사를 표시합니다.',
+    noFilter:
+      '거래 소유자 팀의 리전을 확인할 수 없습니다. 전체 회사를 표시합니다.',
     noResults: (r: string) =>
       r
-        ? `${r} 리전 회사가 없습니다. 필요한 조치 : "새 회사"로 최종 고객사를 만드세요.`
-        : '검색 결과가 없습니다. 필요한 조치 : "새 회사"로 최종 고객사를 만드세요.',
-    newCompany: '새 회사',
-    newContact: '새 담당자',
+        ? `${r} 리전 회사가 없습니다. 필요한 조치 : "신규 회사 생성"으로 최종 고객사를 만드세요.`
+        : '검색 결과가 없습니다. 필요한 조치 : "신규 회사 생성"으로 최종 고객사를 만드세요.',
+    newCompany: '신규 회사 생성',
+    newContact: '신규 연락처 생성',
     pickCompanyFirst: '회사를 먼저 선택하세요.',
     contactsOf: (n: number) => `연결된 담당자 ${n}명 · 여러 명 선택 가능`,
-    noContacts: '이 회사에 연결된 담당자가 없습니다. 필요한 조치 : "새 담당자"로 만드세요.',
+    noContacts:
+      '이 회사에 연결된 담당자가 없습니다. 필요한 조치 : "신규 연락처 생성"으로 만드세요.',
     otherLinked: '다른 회사에서 연결됨',
     saveHint:
       '회사나 담당자 중 하나만 골라도 저장할 수 있습니다. 둘 다 "End Customer" 라벨로 연결됩니다.',
-    companyChange: '회사를 바꾸면 저장할 때 기존 End Customer 연결이 교체됩니다.',
+    companyChange:
+      '회사를 바꾸면 저장할 때 기존 End Customer 연결이 교체됩니다.',
     cancel: '취소',
     save: '저장',
     saving: '저장 중입니다...',
@@ -219,8 +232,10 @@ export const T = {
     jobtitle: 'Job title (직책)',
     jobfunction: 'Job function (직무)',
     teamAuto: 'Recommended Team은 #Country로 자동 지정됩니다.',
-    dupCompany: (n: string) => `같은 도메인의 회사가 이미 있습니다 : ${n}. 기존 회사를 선택했습니다.`,
-    dupContact: (n: string) => `같은 이메일의 담당자가 이미 있습니다 : ${n}. 기존 담당자를 선택했습니다.`,
+    dupCompany: (n: string) =>
+      `같은 도메인의 회사가 이미 있습니다 : ${n}. 기존 회사를 선택했습니다.`,
+    dupContact: (n: string) =>
+      `같은 이메일의 담당자가 이미 있습니다 : ${n}. 기존 담당자를 선택했습니다.`,
     preview: '미리보기',
     newTab: '새 탭',
     change: '변경',
@@ -229,9 +244,11 @@ export const T = {
     select: '최종 고객사 선택',
     emptyTitle: '최종 고객사가 없습니다.',
     emptyAction: '필요한 조치 : 최종 고객사를 선택하세요.',
-    noContactLinked: '연결된 담당자가 없습니다. 필요한 조치 : [+ 담당자 추가]로 선택하세요.',
+    noContactLinked:
+      '연결된 담당자가 없습니다. 필요한 조치 : [+ 담당자 추가]로 선택하세요.',
     noCompanyLinked: '최종 고객사 회사가 없습니다.',
-    extra: (n: string) => `End Customer 라벨이 붙은 회사가 2개 이상입니다(${n}). 필요한 조치 : [변경]으로 1개만 남기세요.`,
+    extra: (n: string) =>
+      `End Customer 라벨이 붙은 회사가 2개 이상입니다(${n}). 필요한 조치 : [변경]으로 1개만 남기세요.`,
     lCountry: '#Country',
     lIndustry: 'Industry (산업)',
     lLifecycle: 'Lifecycle Stage',
@@ -254,12 +271,14 @@ export const T = {
     openTab: '새 탭에서 열기',
     changeCompany: '회사 변경',
     lName: '이름',
-    emptyLine: '최종 고객사가 없습니다. 필요한 조치 : 회사를 검색해 연결하세요.',
+    emptyLine:
+      '최종 고객사가 없습니다. 필요한 조치 : 회사를 검색해 연결하세요.',
     pending: '저장 시 반영',
   },
 };
 
-export const webUrl = (w: string) => (/^https?:\/\//i.test(w) ? w : `https://${w}`);
+export const webUrl = (w: string) =>
+  /^https?:\/\//i.test(w) ? w : `https://${w}`;
 
 // 레코드 바로가기 — 미리보기(HubSpot 미리보기 패널) · 새 탭
 export const RecordLinks = ({
@@ -282,7 +301,11 @@ export const RecordLinks = ({
     >
       {T[lang].preview}
     </CrmActionButton>
-    <Button variant="secondary" size="xs" href={{ url: objUrl(portalId, type, id), external: true }}>
+    <Button
+      variant="secondary"
+      size="xs"
+      href={{ url: objUrl(portalId, type, id), external: true }}
+    >
       {T[lang].newTab}
     </Button>
   </Flex>
@@ -317,7 +340,9 @@ export const Editor = ({
   const [listOpen, setListOpen] = useState(!!openSearch);
   const [searching, setSearching] = useState(false);
   const [list, setList] = useState<Contact[] | null>(null);
-  const [checked, setChecked] = useState<string[]>(data.contacts.map((c) => c.id));
+  const [checked, setChecked] = useState<string[]>(
+    data.contacts.map((c) => c.id),
+  );
   const [mode, setMode] = useState<'' | 'company' | 'contact'>('');
   const [form, setForm] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -329,7 +354,13 @@ export const Editor = ({
       setSearching(true);
       setErr('');
       try {
-        const r = await callEC({ action: 'search', dealId, lang, query: q, region: data.region });
+        const r = await callEC({
+          action: 'search',
+          dealId,
+          lang,
+          query: q,
+          region: data.region,
+        });
         setResults(r.results);
         setTotal(r.total || r.results.length);
       } catch (e) {
@@ -349,7 +380,12 @@ export const Editor = ({
     async (id: string) => {
       setList(null);
       try {
-        const r = await callEC({ action: 'contacts', dealId, lang, companyId: id });
+        const r = await callEC({
+          action: 'contacts',
+          dealId,
+          lang,
+          companyId: id,
+        });
         setList(r.results);
       } catch (e) {
         setErr((e as Error).message);
@@ -373,10 +409,17 @@ export const Editor = ({
     if (!data.company || data.company.id !== c.id) setChecked([]);
   };
   const toggle = (id: string, on: boolean) =>
-    setChecked((prev) => (on ? [...new Set([...prev, id])] : prev.filter((x) => x !== id)));
+    setChecked((prev) =>
+      on ? [...new Set([...prev, id])] : prev.filter((x) => x !== id),
+    );
 
-  const changedCompany = (company?.id || '') !== (data.company?.id || '') || data.extraCompanies.length > 0;
-  const before = data.contacts.map((c) => c.id).sort().join(',');
+  const changedCompany =
+    (company?.id || '') !== (data.company?.id || '') ||
+    data.extraCompanies.length > 0;
+  const before = data.contacts
+    .map((c) => c.id)
+    .sort()
+    .join(',');
   const changedContacts = [...checked].sort().join(',') !== before;
   const dirty = changedCompany || changedContacts;
 
@@ -404,11 +447,22 @@ export const Editor = ({
     setNote('');
     try {
       if (mode === 'company') {
-        const r = await callEC({ action: 'createCompany', dealId, lang, values: form });
+        const r = await callEC({
+          action: 'createCompany',
+          dealId,
+          lang,
+          values: form,
+        });
         if (r.duplicate) setNote(t.dupCompany(r.company.name));
         pickCompany(r.company);
       } else if (mode === 'contact' && company) {
-        const r = await callEC({ action: 'createContact', dealId, lang, companyId: company.id, values: form });
+        const r = await callEC({
+          action: 'createContact',
+          dealId,
+          lang,
+          companyId: company.id,
+          values: form,
+        });
         if (r.duplicate) setNote(t.dupContact(r.contact.name));
         await loadContacts(company.id);
         toggle(r.contact.id, true);
@@ -421,29 +475,67 @@ export const Editor = ({
     setBusy(false);
   };
   const f = (k: string) => form[k] || '';
-  const setF = (k: string) => (v: string | number | boolean) => setForm((p) => ({ ...p, [k]: String(v) }));
+  const setF = (k: string) => (v: string | number | boolean) =>
+    setForm((p) => ({ ...p, [k]: String(v) }));
   const row = compact ? 'column' : 'row';
   const formButtons = (ok: boolean) => (
     <Flex direction="row" gap="small">
-      <LoadingButton size="sm" variant="primary" loading={busy} disabled={!ok} onClick={create}>
+      <LoadingButton
+        size="sm"
+        variant="primary"
+        loading={busy}
+        disabled={!ok}
+        onClick={create}
+      >
         {t.create}
       </LoadingButton>
-      <Button size="sm" onClick={() => { setMode(''); setForm({}); }}>{t.cancel}</Button>
+      <Button
+        size="sm"
+        onClick={() => {
+          setMode('');
+          setForm({});
+        }}
+      >
+        {t.cancel}
+      </Button>
     </Flex>
   );
 
   const companyForm = (
     <Tile>
       <Flex direction="column" gap="small">
-        <Text format={{ fontWeight: 'demibold' }}>{ko ? '새 회사 만들기' : 'Create a company'}</Text>
-        <Input name="name" label={t.name} value={f('name')} onChange={setF('name')} />
-        <Input name="domain" label={t.domain} placeholder="example.com" value={f('domain')} onChange={setF('domain')} />
+        <Text format={{ fontWeight: 'demibold' }}>{t.newCompany}</Text>
+        <Input
+          name="name"
+          label={t.name}
+          value={f('name')}
+          onChange={setF('name')}
+        />
+        <Input
+          name="domain"
+          label={t.domain}
+          placeholder="example.com"
+          value={f('domain')}
+          onChange={setF('domain')}
+        />
         <Flex direction={row} gap="small">
           <Box1>
-            <Select name="account_country" label={t.country} options={data.options.country} value={f('account_country')} onChange={setF('account_country')} />
+            <Select
+              name="account_country"
+              label={t.country}
+              options={data.options.country}
+              value={f('account_country')}
+              onChange={setF('account_country')}
+            />
           </Box1>
           <Box1>
-            <Select name="industry" label={t.industry} options={data.options.industry} value={f('industry')} onChange={setF('industry')} />
+            <Select
+              name="industry"
+              label={t.industry}
+              options={data.options.industry}
+              value={f('industry')}
+              onChange={setF('industry')}
+            />
           </Box1>
         </Flex>
         <Text variant="microcopy">ⓘ {t.teamAuto}</Text>
@@ -454,15 +546,51 @@ export const Editor = ({
   const contactForm = (
     <Tile>
       <Flex direction="column" gap="small">
-        <Text format={{ fontWeight: 'demibold' }}>{ko ? `새 담당자 만들기 · ${company?.name || ''}` : `Create a contact · ${company?.name || ''}`}</Text>
+        <Text
+          format={{ fontWeight: 'demibold' }}
+        >{`${t.newContact} · ${company?.name || ''}`}</Text>
         <Flex direction={row} gap="small">
-          <Box1><Input name="firstname" label={t.first} value={f('firstname')} onChange={setF('firstname')} /></Box1>
-          <Box1><Input name="lastname" label={t.last} value={f('lastname')} onChange={setF('lastname')} /></Box1>
+          <Box1>
+            <Input
+              name="firstname"
+              label={t.first}
+              value={f('firstname')}
+              onChange={setF('firstname')}
+            />
+          </Box1>
+          <Box1>
+            <Input
+              name="lastname"
+              label={t.last}
+              value={f('lastname')}
+              onChange={setF('lastname')}
+            />
+          </Box1>
         </Flex>
-        <Input name="email" label={t.email} placeholder="name@company.com" value={f('email')} onChange={setF('email')} />
+        <Input
+          name="email"
+          label={t.email}
+          placeholder="name@company.com"
+          value={f('email')}
+          onChange={setF('email')}
+        />
         <Flex direction={row} gap="small">
-          <Box1><Input name="jobtitle" label={t.jobtitle} value={f('jobtitle')} onChange={setF('jobtitle')} /></Box1>
-          <Box1><Input name="job_function" label={t.jobfunction} value={f('job_function')} onChange={setF('job_function')} /></Box1>
+          <Box1>
+            <Input
+              name="jobtitle"
+              label={t.jobtitle}
+              value={f('jobtitle')}
+              onChange={setF('jobtitle')}
+            />
+          </Box1>
+          <Box1>
+            <Input
+              name="job_function"
+              label={t.jobfunction}
+              value={f('job_function')}
+              onChange={setF('job_function')}
+            />
+          </Box1>
         </Flex>
         {formButtons(!!(f('firstname') && f('email')))}
       </Flex>
@@ -473,9 +601,15 @@ export const Editor = ({
   const shown = (results || []).slice(0, compact ? 6 : 8);
   const resultTable = (
     <Flex direction="column" gap="extra-small">
-      {searching && !results ? <LoadingSpinner size="xs" label={t.loading} /> : null}
+      {searching && !results ? (
+        <LoadingSpinner size="xs" label={t.loading} />
+      ) : null}
       {results && results.length === 0 ? (
-        <EmptyState title={ko ? '검색 결과가 없습니다' : 'No results'} layout="horizontal" imageWidth={60}>
+        <EmptyState
+          title={ko ? '검색 결과가 없습니다' : 'No results'}
+          layout="horizontal"
+          imageWidth={60}
+        >
           <Text variant="microcopy">{t.noResults(data.region)}</Text>
         </EmptyState>
       ) : null}
@@ -484,9 +618,21 @@ export const Editor = ({
           <TableHead>
             <TableRow>
               <TableHeader>{ko ? '회사명' : 'Company'}</TableHeader>
-              {compact ? null : <TableHeader>{ko ? '국가' : 'Country'}</TableHeader>}
-              {compact ? null : <TableHeader>{ko ? '라이프사이클' : 'Lifecycle'}</TableHeader>}
-              <TableHeader>{compact ? (ko ? '국가 · 도메인' : 'Country · domain') : ko ? '도메인' : 'Domain'}</TableHeader>
+              {compact ? null : (
+                <TableHeader>{ko ? '국가' : 'Country'}</TableHeader>
+              )}
+              {compact ? null : (
+                <TableHeader>{ko ? '라이프사이클' : 'Lifecycle'}</TableHeader>
+              )}
+              <TableHeader>
+                {compact
+                  ? ko
+                    ? '국가 · 도메인'
+                    : 'Country · domain'
+                  : ko
+                    ? '도메인'
+                    : 'Domain'}
+              </TableHeader>
               <TableHeader> </TableHeader>
             </TableRow>
           </TableHead>
@@ -494,18 +640,30 @@ export const Editor = ({
             {shown.map((r) => (
               <TableRow key={r.id}>
                 <TableCell>
-                  <Link href={{ url: objUrl(PORTAL, '0-2', r.id), external: false }} preventDefault onClick={() => pickCompany(r)}>
+                  <Link
+                    href={{ url: objUrl(PORTAL, '0-2', r.id), external: false }}
+                    preventDefault
+                    onClick={() => pickCompany(r)}
+                  >
                     {r.name}
                   </Link>
                 </TableCell>
                 {compact ? null : <TableCell>{r.country || '--'}</TableCell>}
                 {compact ? null : <TableCell>{r.lifecycle || '--'}</TableCell>}
-                <TableCell>{compact ? joinVals(r.country, r.domain) || '--' : r.domain || '--'}</TableCell>
+                <TableCell>
+                  {compact
+                    ? joinVals(r.country, r.domain) || '--'
+                    : r.domain || '--'}
+                </TableCell>
                 <TableCell align="right">
                   {company && company.id === r.id ? (
-                    <StatusTag variant="success">{ko ? '현재' : 'Current'}</StatusTag>
+                    <StatusTag variant="success">
+                      {ko ? '현재' : 'Current'}
+                    </StatusTag>
                   ) : (
-                    <Button size="xs" onClick={() => pickCompany(r)}>{ko ? '선택' : 'Select'}</Button>
+                    <Button size="xs" onClick={() => pickCompany(r)}>
+                      {ko ? '선택' : 'Select'}
+                    </Button>
                   )}
                 </TableCell>
               </TableRow>
@@ -514,15 +672,22 @@ export const Editor = ({
         </Table>
       ) : null}
       {results && results.length ? (
-        <Flex direction="row" justify="between" align="center" gap="small" wrap="wrap">
+        <Flex
+          direction="row"
+          justify="between"
+          align="center"
+          gap="small"
+          wrap="wrap"
+        >
           <Text variant="microcopy">
             {query
-              ? ko ? `검색 결과 ${total}건${total > shown.length ? ` 중 ${shown.length}건 표시 · 검색어를 더 입력하세요` : ''}` : `${total} results${total > shown.length ? `, showing ${shown.length}. Type more to narrow down` : ''}`
-              : ko ? `최근 수정 순 ${shown.length}건` : `${shown.length} recently updated`}
+              ? ko
+                ? `검색 결과 ${total}건${total > shown.length ? ` 중 ${shown.length}건 표시 · 검색어를 더 입력하세요` : ''}`
+                : `${total} results${total > shown.length ? `, showing ${shown.length}. Type more to narrow down` : ''}`
+              : ko
+                ? `최근 수정 순 ${shown.length}건`
+                : `${shown.length} recently updated`}
           </Text>
-          <Link href={{ url: objUrl(PORTAL, '0-2', dealId), external: false }} preventDefault onClick={() => { setMode('company'); setForm({ name: query }); setListOpen(false); }}>
-            <IconText name="add">{ko ? '찾는 회사가 없나요? 새 회사' : 'Not listed? New company'}</IconText>
-          </Link>
         </Flex>
       ) : null}
     </Flex>
@@ -530,13 +695,23 @@ export const Editor = ({
 
   // 다른 회사에서 이미 연결된 담당자도 목록에 함께 보여줌(체크 해제하면 저장 시 연결 해제)
   const listIds = new Set((list || []).map((c) => c.id));
-  const outside = data.contacts.filter((c) => !listIds.has(c.id) && checked.includes(c.id));
+  const outside = data.contacts.filter(
+    (c) => !listIds.has(c.id) && checked.includes(c.id),
+  );
   const allContacts = [...(list || []), ...outside];
 
   return (
     <Flex direction="column" gap="medium">
-      {err ? <Alert title={t.error} variant="danger">{err}</Alert> : null}
-      {note ? <Alert title={ko ? '알림' : 'Notice'} variant="info">{note}</Alert> : null}
+      {err ? (
+        <Alert title={t.error} variant="danger">
+          {err}
+        </Alert>
+      ) : null}
+      {note ? (
+        <Alert title={ko ? '알림' : 'Notice'} variant="info">
+          {note}
+        </Alert>
+      ) : null}
 
       {/* ① 회사 */}
       <SectionHead
@@ -544,20 +719,111 @@ export const Editor = ({
         action={
           company && !searchOpen ? (
             [
-              <Link key="c" href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setResults(null); setSearchOpen(true); setListOpen(true); }}>
+              <Link
+                key="c"
+                href={{
+                  url: objUrl(PORTAL, '0-2', company.id),
+                  external: false,
+                }}
+                preventDefault
+                onClick={() => {
+                  setResults(null);
+                  setSearchOpen(true);
+                  setListOpen(true);
+                }}
+              >
                 {t.change}
               </Link>,
-              <Link key="u" href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setCompany(null); setChecked([]); setSearchOpen(true); setListOpen(false); setQuery(''); }}>
+              <Link
+                key="u"
+                href={{
+                  url: objUrl(PORTAL, '0-2', company.id),
+                  external: false,
+                }}
+                preventDefault
+                onClick={() => {
+                  setCompany(null);
+                  setChecked([]);
+                  setSearchOpen(true);
+                  setListOpen(false);
+                  setQuery('');
+                }}
+              >
                 {t.unlink}
               </Link>,
             ]
           ) : !company && data.company && searchOpen ? (
-            <Link href={{ url: objUrl(PORTAL, '0-2', data.company.id), external: false }} preventDefault onClick={() => { setCompany(data.company); setChecked(data.contacts.map((c) => c.id)); setSearchOpen(false); setListOpen(false); }}>
-              {ko ? '해제 취소' : 'Undo'}
-            </Link>
+            [
+              <Link
+                key="n"
+                href={{ url: objUrl(PORTAL, '0-2', dealId), external: false }}
+                preventDefault
+                onClick={() => {
+                  setMode('company');
+                  setForm({ name: query });
+                  setListOpen(false);
+                }}
+              >
+                <IconText name="add">{t.newCompany}</IconText>
+              </Link>,
+              <Link
+                key="x"
+                href={{
+                  url: objUrl(PORTAL, '0-2', data.company.id),
+                  external: false,
+                }}
+                preventDefault
+                onClick={() => {
+                  setCompany(data.company);
+                  setChecked(data.contacts.map((c) => c.id));
+                  setSearchOpen(false);
+                  setListOpen(false);
+                }}
+              >
+                {ko ? '해제 취소' : 'Undo'}
+              </Link>,
+            ]
           ) : company && searchOpen ? (
-            <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setSearchOpen(false); setListOpen(false); setQuery(''); }}>
-              {t.cancel}
+            [
+              <Link
+                key="n"
+                href={{ url: objUrl(PORTAL, '0-2', dealId), external: false }}
+                preventDefault
+                onClick={() => {
+                  setMode('company');
+                  setForm({ name: query });
+                  setListOpen(false);
+                }}
+              >
+                <IconText name="add">{t.newCompany}</IconText>
+              </Link>,
+              <Link
+                key="x"
+                href={{
+                  url: objUrl(PORTAL, '0-2', company.id),
+                  external: false,
+                }}
+                preventDefault
+                onClick={() => {
+                  setSearchOpen(false);
+                  setListOpen(false);
+                  setQuery('');
+                }}
+              >
+                {t.cancel}
+              </Link>,
+            ]
+          ) : searchOpen && mode !== 'company' ? (
+            <Link
+              href={{ url: objUrl(PORTAL, '0-2', dealId), external: false }}
+              preventDefault
+              onClick={() => {
+                setMode('company');
+                setForm({ name: query });
+                setListOpen(false);
+              }}
+            >
+              <IconText name="add">{t.newCompany}</IconText>
             </Link>
           ) : undefined
         }
@@ -566,8 +832,12 @@ export const Editor = ({
         <Tile compact>
           <Flex direction="row" gap="small" align="center" wrap="wrap">
             <Text format={{ fontWeight: 'demibold' }}>{company.name}</Text>
-            <Text variant="microcopy">{joinVals(company.country, company.lifecycle, company.domain)}</Text>
-            {changedCompany ? <StatusTag variant="warning">{t.pending}</StatusTag> : null}
+            <Text variant="microcopy">
+              {joinVals(company.country, company.lifecycle, company.domain)}
+            </Text>
+            {changedCompany ? (
+              <StatusTag variant="warning">{t.pending}</StatusTag>
+            ) : null}
           </Flex>
         </Tile>
       ) : (
@@ -575,17 +845,31 @@ export const Editor = ({
           <SearchInput
             name="ec_search"
             label=""
-            placeholder={data.region ? (ko ? `${data.region} 회사 검색 · 회사명 또는 도메인` : `Search ${data.region} companies · name or domain`) : t.searchPh}
+            placeholder={
+              data.region
+                ? ko
+                  ? `${data.region} 회사 검색 · 회사명 또는 도메인`
+                  : `Search ${data.region} companies · name or domain`
+                : t.searchPh
+            }
             clearable
             onFocus={() => setListOpen(true)}
-            onInput={(v: string) => { setQuery(v); setListOpen(true); }}
+            onInput={(v: string) => {
+              setQuery(v);
+              setListOpen(true);
+            }}
           />
-          <Text variant="microcopy">{data.region ? t.filterHint(data.region) : t.noFilter}</Text>
+          <Text variant="microcopy">
+            {data.region ? t.filterHint(data.region) : t.noFilter}
+          </Text>
           {listOpen ? resultTable : null}
         </Flex>
       )}
       {!company && data.company ? (
-        <Alert title={ko ? '연결 해제 예정' : 'Will be unlinked'} variant="warning">
+        <Alert
+          title={ko ? '연결 해제 예정' : 'Will be unlinked'}
+          variant="warning"
+        >
           {ko
             ? `저장하면 ${data.company.name}과(와) 담당자 ${data.contacts.length}명이 이 거래에서 연결 해제됩니다. 레코드는 삭제되지 않습니다. 다른 회사를 고르려면 위에서 검색하세요.`
             : `Saving removes ${data.company.name} and ${data.contacts.length} contact(s) from this deal. Records are not deleted. To pick another company, search above.`}
@@ -598,7 +882,14 @@ export const Editor = ({
         title={t.stepContacts}
         action={
           company && list !== null && mode !== 'contact' ? (
-            <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setMode('contact'); setForm({}); }}>
+            <Link
+              href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }}
+              preventDefault
+              onClick={() => {
+                setMode('contact');
+                setForm({});
+              }}
+            >
               <IconText name="add">{t.newContact}</IconText>
             </Link>
           ) : undefined
@@ -618,7 +909,11 @@ export const Editor = ({
               name={`ec_${c.id}`}
               checked={checked.includes(c.id)}
               onChange={(on: boolean) => toggle(c.id, on)}
-              description={joinVals(c.jobtitle || c.jobfunction, c.email, listIds.has(c.id) ? '' : t.otherLinked)}
+              description={joinVals(
+                c.jobtitle || c.jobfunction,
+                c.email,
+                listIds.has(c.id) ? '' : t.otherLinked,
+              )}
             >
               {c.name || t.noName}
             </Checkbox>
@@ -639,11 +934,20 @@ export const Editor = ({
             {allContacts.map((c) => (
               <TableRow key={c.id}>
                 <TableCell width="min">
-                  <Checkbox name={`ec_${c.id}`} checked={checked.includes(c.id)} onChange={(on: boolean) => toggle(c.id, on)} aria-label={c.name || c.email || t.noName}>
+                  <Checkbox
+                    name={`ec_${c.id}`}
+                    checked={checked.includes(c.id)}
+                    onChange={(on: boolean) => toggle(c.id, on)}
+                    aria-label={c.name || c.email || t.noName}
+                  >
                     {' '}
                   </Checkbox>
                 </TableCell>
-                <TableCell>{listIds.has(c.id) ? c.name || t.noName : `${c.name || t.noName} · ${t.otherLinked}`}</TableCell>
+                <TableCell>
+                  {listIds.has(c.id)
+                    ? c.name || t.noName
+                    : `${c.name || t.noName} · ${t.otherLinked}`}
+                </TableCell>
                 <TableCell>{c.email || '--'}</TableCell>
                 <TableCell>{c.jobtitle || '--'}</TableCell>
                 <TableCell>{c.jobfunction || '--'}</TableCell>
@@ -655,11 +959,26 @@ export const Editor = ({
       {mode === 'contact' ? contactForm : null}
       <Divider />
       <Flex direction="row" gap="small" align="center" wrap="wrap">
-        <LoadingButton variant="primary" loading={busy && mode === ''} disabled={!dirty || mode !== ''} onClick={save}>
-          {!company && data.company && !checked.length ? (ko ? '연결 해제 저장' : 'Save unlink') : t.saveN(company ? 1 : 0, checked.length)}
+        <LoadingButton
+          variant="primary"
+          loading={busy && mode === ''}
+          disabled={!dirty || mode !== ''}
+          onClick={save}
+        >
+          {!company && data.company && !checked.length
+            ? ko
+              ? '연결 해제 저장'
+              : 'Save unlink'
+            : t.saveN(company ? 1 : 0, checked.length)}
         </LoadingButton>
         {onCancel ? <Button onClick={onCancel}>{t.cancel}</Button> : null}
-        <Text variant="microcopy">{dirty ? t.saveHint : ko ? '변경 사항이 없습니다.' : 'There are no changes.'}</Text>
+        <Text variant="microcopy">
+          {dirty
+            ? t.saveHint
+            : ko
+              ? '변경 사항이 없습니다.'
+              : 'There are no changes.'}
+        </Text>
       </Flex>
     </Flex>
   );
@@ -668,13 +987,19 @@ export const Editor = ({
 // Flex 안에서 남은 폭을 채우는 칸
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Box1 = ({ children }: { children: any }) => (
-  <Box flex={1}>
-    {children}
-  </Box>
+  <Box flex={1}>{children}</Box>
 );
 
 // 회사 요약
-export const CompanySummary = ({ lang, c, compact }: { lang: Lang; c: Company; compact?: boolean }) => {
+export const CompanySummary = ({
+  lang,
+  c,
+  compact,
+}: {
+  lang: Lang;
+  c: Company;
+  compact?: boolean;
+}) => {
   const t = T[lang];
   const items: [string, React.ReactNode][] = [
     [t.lCountry, c.country || '—'],
@@ -682,10 +1007,17 @@ export const CompanySummary = ({ lang, c, compact }: { lang: Lang; c: Company; c
     [t.lLifecycle, c.lifecycle || '—'],
     [
       t.lWebsite,
-      c.website ? <Link href={{ url: webUrl(c.website), external: true }}>{c.website}</Link> : '—',
+      c.website ? (
+        <Link href={{ url: webUrl(c.website), external: true }}>
+          {c.website}
+        </Link>
+      ) : (
+        '—'
+      ),
     ],
   ];
-  if (!compact) items.push([t.lTeam, c.team || '—'], [t.lOwner, c.owner || '—']);
+  if (!compact)
+    items.push([t.lTeam, c.team || '—'], [t.lOwner, c.owner || '—']);
   return (
     <DescriptionList direction={compact ? 'column' : 'row'}>
       {items.map(([k, v]) => (
@@ -705,11 +1037,23 @@ export const ContactSummary = ({ lang, c }: { lang: Lang; c: Contact }) => {
   return (
     <DescriptionList direction="row">
       <DescriptionListItem label={t.lEmail}>
-        {c.email ? <Link href={{ url: `mailto:${c.email}`, external: true }}>{c.email}</Link> : <Text>—</Text>}
+        {c.email ? (
+          <Link href={{ url: `mailto:${c.email}`, external: true }}>
+            {c.email}
+          </Link>
+        ) : (
+          <Text>—</Text>
+        )}
       </DescriptionListItem>
-      <DescriptionListItem label={t.lJob}><Text>{c.jobtitle || '—'}</Text></DescriptionListItem>
-      <DescriptionListItem label={t.lFunction}><Text>{c.jobfunction || '—'}</Text></DescriptionListItem>
-      <DescriptionListItem label={t.lPhone}><Text>{c.phone || '—'}</Text></DescriptionListItem>
+      <DescriptionListItem label={t.lJob}>
+        <Text>{c.jobtitle || '—'}</Text>
+      </DescriptionListItem>
+      <DescriptionListItem label={t.lFunction}>
+        <Text>{c.jobfunction || '—'}</Text>
+      </DescriptionListItem>
+      <DescriptionListItem label={t.lPhone}>
+        <Text>{c.phone || '—'}</Text>
+      </DescriptionListItem>
     </DescriptionList>
   );
 };
