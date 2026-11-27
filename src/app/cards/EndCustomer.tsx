@@ -294,15 +294,11 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
                       >
                         {c.name || t.noName}
                       </Link>
-                      {c.jobtitle || c.jobfunction ? (
-                        <Text variant="microcopy">
-                          {joinVals(c.jobtitle, c.jobfunction)}
-                        </Text>
-                      ) : null}
-                      <Text variant="microcopy">{c.email || '--'}</Text>
-                      {c.phone ? (
-                        <Text variant="microcopy">{c.phone}</Text>
-                      ) : null}
+                      <Text variant="microcopy">
+                        {`${lang === 'ko' ? '직급' : 'Title'} : ${c.jobtitle || '--'} · ${lang === 'ko' ? '직무' : 'Function'} : ${c.jobfunction || '--'}`}
+                      </Text>
+                      <Text variant="microcopy">{`${lang === 'ko' ? '전화' : 'Phone'} : ${c.phone || '--'}`}</Text>
+                      <Text variant="microcopy">{`${lang === 'ko' ? '이메일' : 'Email'} : ${c.email || '--'}`}</Text>
                     </Flex>
                   </Box>
                 </Flex>
