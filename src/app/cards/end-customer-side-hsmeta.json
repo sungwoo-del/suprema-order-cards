@@ -1,0 +1,13 @@
+{
+  "uid": "end_customer_side_card",
+  "type": "card",
+  "config": {
+    "name": "End Customer (최종 고객사) · Sidebar",
+    "description": "End customer company and contacts summary",
+    "location": "crm.record.sidebar",
+    "entrypoint": "/app/cards/EndCustomerSide.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

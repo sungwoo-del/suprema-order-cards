@@ -1,0 +1,13 @@
+{
+  "uid": "convert_opp_side_card",
+  "type": "card",
+  "config": {
+    "name": "Convert to Opportunity (영업기회 전환) · Sidebar",
+    "description": "Lead conversion status and link to the created opportunity",
+    "location": "crm.record.sidebar",
+    "entrypoint": "/app/cards/ConvertOppSide.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

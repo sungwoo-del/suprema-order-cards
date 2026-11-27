@@ -1,0 +1,13 @@
+{
+  "uid": "order_summary_card",
+  "type": "card",
+  "config": {
+    "name": "Order Summary (주문 요약)",
+    "description": "Read-only summary of the order setup",
+    "location": "crm.record.sidebar",
+    "entrypoint": "/app/cards/OrderSummary.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

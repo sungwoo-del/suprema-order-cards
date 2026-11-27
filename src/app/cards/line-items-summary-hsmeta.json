@@ -1,0 +1,13 @@
+{
+  "uid": "line_items_summary_card",
+  "type": "card",
+  "config": {
+    "name": "Line Items (라인아이템)",
+    "description": "Line item count, total, discount and editor link",
+    "location": "crm.record.sidebar",
+    "entrypoint": "/app/cards/LineItemsSummary.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

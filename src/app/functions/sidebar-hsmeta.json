@@ -1,0 +1,8 @@
+{
+  "uid": "sidebar_cards",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/sidebar.js",
+    "secretKeys": []
+  }
+}

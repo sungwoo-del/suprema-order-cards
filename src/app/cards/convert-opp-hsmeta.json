@@ -1,0 +1,13 @@
+{
+  "uid": "convert_opp_card",
+  "type": "card",
+  "config": {
+    "name": "Convert to Opportunity (영업기회 전환)",
+    "description": "Creates an opportunity from a converted lead with owner, associations, line items and activities",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/ConvertOpp.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "uid": "route_erp_card",
+  "type": "card",
+  "config": {
+    "name": "Order Route · ERP (주문 경로 · ERP)",
+    "description": "Order route, ERP target and pipeline stages",
+    "location": "crm.record.sidebar",
+    "entrypoint": "/app/cards/RouteErp.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

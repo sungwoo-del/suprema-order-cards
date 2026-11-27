@@ -1,0 +1,52 @@
+{
+  "uid": "suprema_order_cards_app",
+  "type": "app",
+  "config": {
+    "description": "Suprema deal order setup cards (buyer, order type, price book, order route)",
+    "name": "Suprema Order - HelloDigital",
+    "distribution": "private",
+    "auth": {
+      "type": "static",
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write",
+        "crm.objects.custom.read",
+        "crm.schemas.deals.read",
+        "crm.schemas.deals.write",
+        "settings.users.teams.read",
+        "hubdb.tables.read",
+        "hubdb.tables.write",
+        "hubdb.tables.publish",
+        "hubdb.rows.read",
+        "hubdb.rows.write",
+        "crm.objects.line_items.read",
+        "crm.objects.line_items.write",
+        "crm.objects.companies.read",
+        "crm.objects.companies.write",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.schemas.companies.read",
+        "crm.schemas.contacts.read",
+        "crm.objects.owners.read",
+        "crm.objects.custom.write",
+        "sales-email-read"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [
+        "https://api.hubapi.com"
+      ],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@hellodigital.co.kr",
+      "documentationUrl": "https://hellodigital.kr",
+      "supportUrl": "https://hellodigital.kr",
+      "supportPhone": "+8200000000"
+    }
+  }
+}

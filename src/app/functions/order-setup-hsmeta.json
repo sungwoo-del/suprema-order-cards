@@ -1,0 +1,8 @@
+{
+  "uid": "order_setup",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/orderSetup.js",
+    "secretKeys": []
+  }
+}

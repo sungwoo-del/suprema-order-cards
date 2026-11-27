@@ -1,0 +1,8 @@
+{
+  "uid": "route_editor",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/routeEditor.js",
+    "secretKeys": []
+  }
+}

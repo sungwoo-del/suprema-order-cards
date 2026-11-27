@@ -1,0 +1,13 @@
+{
+  "uid": "buyer_info_card",
+  "type": "card",
+  "config": {
+    "name": "Buyer (구매자)",
+    "description": "Buyer company and contact summary",
+    "location": "crm.record.sidebar",
+    "entrypoint": "/app/cards/BuyerInfo.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

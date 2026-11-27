@@ -1,0 +1,8 @@
+{
+  "uid": "convert_opp",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/convertOpp.js",
+    "secretKeys": []
+  }
+}

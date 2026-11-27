@@ -1,0 +1,11 @@
+{
+  "uid": "buyer_picker_card",
+  "type": "card",
+  "config": {
+    "name": "Buyer Picker (구매 회사·담당자 선택)",
+    "description": "Owner Branch 기준 파트너사·담당자를 실시간으로 조회해 선택",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/BuyerPicker.tsx",
+    "objectTypes": ["deals"]
+  }
+}

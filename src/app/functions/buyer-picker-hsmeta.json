@@ -1,0 +1,8 @@
+{
+  "uid": "buyer_picker",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/buyerPicker.js",
+    "secretKeys": []
+  }
+}

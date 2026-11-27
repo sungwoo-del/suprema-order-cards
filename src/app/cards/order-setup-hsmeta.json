@@ -1,0 +1,13 @@
+{
+  "uid": "order_setup_card",
+  "type": "card",
+  "config": {
+    "name": "Order Setup (주문 설정)",
+    "description": "Buyer, order type, price book and order route in one card",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/OrderSetup.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

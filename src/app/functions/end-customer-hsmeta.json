@@ -1,0 +1,8 @@
+{
+  "uid": "end_customer",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/endCustomer.js",
+    "secretKeys": []
+  }
+}
