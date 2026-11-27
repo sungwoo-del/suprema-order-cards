@@ -3,7 +3,7 @@
   "type": "app",
   "config": {
     "description": "Suprema deal order setup cards (buyer, order type, price book, order route)",
-    "name": "HelloDigital ver.33_B",
+    "name": "HelloDigital ver.34_B",
     "distribution": "private",
     "auth": {
       "type": "static",

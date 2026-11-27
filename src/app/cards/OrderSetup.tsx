@@ -75,7 +75,7 @@ type GuideItem = {
 };
 
 // 카드 설명 옆 버전 표기 — 배포할 때 함께 올림
-const CARD_VERSION = '34';
+const CARD_VERSION = '35';
 const CARD_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 const CARD_STAGE = 'Beta';
@@ -1415,15 +1415,12 @@ const OrderSetup = ({ context, actions }: any) => {
     <Flex direction="column" gap="small">
       {/* 설명 · 주문 가이드 · 새로고침 (오른쪽 끝) */}
       <Flex direction="row" justify="between" align="center" gap="small">
-        <Box flex={1}>
-          <Text variant="microcopy">{t.desc}</Text>
-        </Box>
+        <Text variant="microcopy">{t.desc}</Text>
         <Box flex="none">
+          <Flex direction="row" align="center" gap="small" wrap="nowrap">
           <Button variant="secondary" size="xs" overlay={guidePanel}>
             <Icon name="book" size="sm" /> {t.guideBtn}
           </Button>
-        </Box>
-        <Box flex="none">
           <RefreshLink
             label={t.refresh}
             href={`https://app-na2.hubspot.com/contacts/${portalId}/record/0-3/${dealId}`}
@@ -1433,6 +1430,7 @@ const OrderSetup = ({ context, actions }: any) => {
               await load();
             }}
           />
+          </Flex>
         </Box>
       </Flex>
 
