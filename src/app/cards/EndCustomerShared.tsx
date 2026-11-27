@@ -32,7 +32,7 @@ import { CrmActionButton } from '@hubspot/ui-extensions/crm';
 // End Customer(최종 고객사) 카드 공용 — 가운데 컬럼 카드 · 오른쪽 사이드바 카드가 함께 씀
 // 규칙 : 회사 1개 · 담당자 여러 명 · 둘 다 "End Customer" 연결 라벨
 // deploy.sh가 배포할 때 EC_VERSION / EC_UPDATED 를 자동으로 올립니다.
-export const EC_VERSION = '11';
+export const EC_VERSION = '12';
 export const EC_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const EC_STAGE = 'Beta';
@@ -584,8 +584,8 @@ export const Editor = ({
       {!company && data.company ? (
         <Alert title={ko ? '연결 해제 예정' : 'Will be unlinked'} variant="warning">
           {ko
-            ? `저장하면 ${data.company.name}과(와) 담당자 ${data.contacts.length}명의 End Customer 연결이 해제됩니다. 레코드는 삭제되지 않습니다. 다른 회사를 고르려면 위에서 검색하세요.`
-            : `Saving removes the End Customer link for ${data.company.name} and ${data.contacts.length} contact(s). Records are not deleted. To pick another company, search above.`}
+            ? `저장하면 ${data.company.name}과(와) 담당자 ${data.contacts.length}명이 이 거래에서 연결 해제됩니다. 레코드는 삭제되지 않습니다. 다른 회사를 고르려면 위에서 검색하세요.`
+            : `Saving removes ${data.company.name} and ${data.contacts.length} contact(s) from this deal. Records are not deleted. To pick another company, search above.`}
         </Alert>
       ) : null}
       {mode === 'company' ? companyForm : null}

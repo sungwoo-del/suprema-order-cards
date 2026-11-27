@@ -105,8 +105,8 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
       <ModalBody>
         <Text>
           {lang === 'ko'
-            ? `${name}의 End Customer 연결을 해제합니다. 레코드는 삭제되지 않고 이 거래와의 다른 연결도 그대로 유지됩니다.`
-            : `This removes the End Customer link for ${name}. The record is not deleted and its other links to this deal stay.`}
+            ? `${name}과(와) 이 거래의 연결을 해제합니다. 레코드는 삭제되지 않습니다.`
+            : `This removes the association between ${name} and this deal. The record is not deleted.`}
         </Text>
       </ModalBody>
       <ModalFooter>

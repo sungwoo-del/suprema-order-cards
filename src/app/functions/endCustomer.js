@@ -178,8 +178,9 @@ async function addLabel(dealId, to, toId, t) {
 }
 async function removeLabel(dealId, to, ids, t) {
   if (!ids.length) return;
-  // 라벨만 떼고 거래와의 다른 연결은 그대로 둠
-  await api(`/crm/v4/associations/deals/${to}/batch/labels/archive`, { method: 'POST', body: { inputs: ids.map((id) => ({ from: { id: String(dealId) }, to: { id: String(id) }, types: [t] })) } });
+  // 연결 해제 = 거래 ↔ 회사/담당자 연결 자체를 삭제 (End Customer 라벨 포함 모든 연결 유형). 레코드는 삭제하지 않음
+  void t;
+  await api(`/crm/v4/associations/deals/${to}/batch/archive`, { method: 'POST', body: { inputs: [{ from: { id: String(dealId) }, to: ids.map((id) => ({ id: String(id) })) }] } });
 }
 
 // 저장 : company = 새 회사 ID('' = 회사 연결 해제, undefined = 그대로), contactIds = 최종 담당자 목록(undefined = 그대로)
