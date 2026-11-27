@@ -85,12 +85,21 @@ export const FooterLine = ({
 );
 
 // 소제목 + (오른쪽) 동작
-export const SectionHead = ({ title, action }: { title: string; action?: React.ReactNode }) => (
+// action 여러 개는 배열로 — 각각 줄바꿈 없는 칸에 둠
+export const SectionHead = ({ title, action }: { title: string; action?: React.ReactNode | React.ReactNode[] }) => (
   <Flex direction="row" justify="between" align="center" gap="small">
     <Box flex={1}>
       <Text format={{ fontWeight: 'demibold' }}>{title}</Text>
     </Box>
-    {action ? <Box flex="none">{action}</Box> : null}
+    {Array.isArray(action)
+      ? action.map((a, i) => (
+          <Box key={i} flex="none">
+            {a}
+          </Box>
+        ))
+      : action
+        ? <Box flex="none">{action}</Box>
+        : null}
   </Flex>
 );
 
