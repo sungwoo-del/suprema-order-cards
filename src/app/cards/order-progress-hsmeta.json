@@ -1,0 +1,13 @@
+{
+  "uid": "order_progress_card",
+  "type": "card",
+  "config": {
+    "name": "Order Progress (주문 진행)",
+    "description": "Order stage gates, review and PI",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/OrderProgress.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

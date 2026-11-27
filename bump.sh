@@ -16,3 +16,4 @@ bump src/app/cards/OrderSetup.tsx CARD
 bump src/app/cards/SidebarShared.tsx SIDEBAR
 bump src/app/cards/EndCustomerShared.tsx EC
 bump src/app/cards/ConvertShared.tsx CV
+bump src/app/cards/OrderShared.tsx OD

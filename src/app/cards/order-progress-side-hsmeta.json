@@ -1,0 +1,13 @@
+{
+  "uid": "order_progress_side_card",
+  "type": "card",
+  "config": {
+    "name": "Order Progress (주문 진행) · Sidebar",
+    "description": "Order status summary",
+    "location": "crm.record.sidebar",
+    "entrypoint": "/app/cards/OrderProgressSide.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

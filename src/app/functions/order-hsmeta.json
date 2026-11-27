@@ -1,0 +1,8 @@
+{
+  "uid": "order_cards",
+  "type": "app-function",
+  "config": {
+    "entrypoint": "/app/functions/order.js",
+    "secretKeys": []
+  }
+}

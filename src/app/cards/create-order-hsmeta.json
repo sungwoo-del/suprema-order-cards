@@ -1,0 +1,13 @@
+{
+  "uid": "create_order_card",
+  "type": "card",
+  "config": {
+    "name": "Create Order (주문 생성)",
+    "description": "Create an order deal from an opportunity",
+    "location": "crm.record.tab",
+    "entrypoint": "/app/cards/CreateOrder.tsx",
+    "objectTypes": [
+      "deals"
+    ]
+  }
+}

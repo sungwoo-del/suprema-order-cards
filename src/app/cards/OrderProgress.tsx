@@ -1,0 +1,202 @@
+import { useState } from 'react';
+import {
+  Alert,
+  Button,
+  Flex,
+  Link,
+  LoadingSpinner,
+  Statistics,
+  StatisticsItem,
+  Text,
+  TextArea,
+  hubspot,
+} from '@hubspot/ui-extensions';
+import { CrmActionLink } from '@hubspot/ui-extensions/crm';
+import { PORTAL, callOD, editorUrl, getLang, isApprover, objUrl, odVersion, useOD, userName } from './OrderShared.tsx';
+import { FooterLine, StatusRow, TagVariant, joinVals } from './UiKit.tsx';
+
+// Order Progress (주문 진행) — Order 가운데 카드 (Ver.01)
+// 단계별 진입 조건 검사 + 동작 : 검토 요청 → 승인/반려 → PI 발행 → 구매자 승인 → (ERP 자동)
+hubspot.extend<'crm.record.tab'>(({ context, actions }) => <OrderProgress context={context} actions={actions} />);
+
+const TAG: Record<string, [string, string, TagVariant]> = {
+  po: ['Requested', '요청', 'info'],
+  review: ['Under review', '검토 대기', 'warning'],
+  processing: ['Confirming', '확정 진행', 'info'],
+  confirming: ['ERP waiting', 'ERP 대기', 'default'],
+  dispatched: ['Dispatched', '출고', 'info'],
+  closed: ['Closed', '종료', 'success'],
+  lost: ['Closed lost', '취소', 'error'],
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const Steps = ({ stages, current }: { stages: any[]; current: string }) => {
+  const idx = stages.findIndex((s) => s.key === current);
+  return (
+    <Flex direction="row" gap="small" align="center" wrap="wrap">
+      {stages.map((s, i) => (
+        <Text key={s.key} variant="microcopy" format={i === idx ? { fontWeight: 'bold' } : undefined}>
+          {`${i < idx ? '✓' : i === idx ? '●' : '○'} ${s.label}${i < stages.length - 1 ? '  →' : ''}`}
+        </Text>
+      ))}
+    </Flex>
+  );
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const OrderProgress = ({ context, actions }: { context: any; actions: any }) => {
+  const lang = getLang(context);
+  const ko = lang === 'ko';
+  const dealId = String(context?.crm?.objectId ?? '');
+  const portalId = context?.portal?.id ?? PORTAL;
+  const approver = isApprover(context);
+  const { data, error, load, notify } = useOD('progress_load', dealId, lang, actions);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState('');
+  const [err, setErr] = useState('');
+
+  if (error) return <Alert title={ko ? '오류' : 'Error'} variant="danger">{error}</Alert>;
+  if (!data) return <LoadingSpinner label={ko ? '불러오는 중입니다...' : 'Loading...'} />;
+  const footer = (
+    <FooterLine version={odVersion()} refreshLabel={ko ? '새로고침' : 'Refresh'} onRefresh={load} href={objUrl(portalId, '0-3', dealId)} />
+  );
+  if (data.mode !== 'order')
+    return (
+      <Flex direction="column" gap="small">
+        <StatusRow label={ko ? '해당 없음' : 'Not applicable'} text={ko ? 'Order 파이프라인 거래에서만 사용합니다.' : 'Used only for order pipeline deals.'} />
+        {footer}
+      </Flex>
+    );
+
+  const run = async (key: string, params: Record<string, unknown>) => {
+    setBusy(key);
+    setErr('');
+    try {
+      await callOD({ dealId, lang, ...params });
+      setNote('');
+      await load();
+      notify();
+    } catch (e) {
+      setErr((e as Error).message);
+    }
+    setBusy('');
+  };
+  const cur = data.current as string;
+  const [en, kr, variant] = TAG[cur] || ['--', '--', 'default'];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const checkList = (data.checks || []).map((c: any) => (
+    <Flex key={c.key} direction="row" gap="small" align="center" justify="between">
+      <Text format={c.ok ? undefined : { fontWeight: 'demibold' }}>{`${c.ok ? '✓' : '○'}  ${c.text}`}</Text>
+      {!c.ok && (c.key === 'lines' || c.key === 'zero') ? (
+        <Link href={{ url: editorUrl(portalId, dealId), external: true }}>{ko ? '라인아이템 편집 ↗' : 'Edit line items ↗'}</Link>
+      ) : null}
+    </Flex>
+  ));
+  const reviewLine = data.review.status
+    ? joinVals(
+        data.review.status === 'approved' ? (ko ? '검토 승인' : 'Approved') : data.review.status === 'rejected' ? (ko ? '검토 반려' : 'Rejected') : ko ? '검토 대기' : 'Pending',
+        data.review.by,
+      )
+    : '';
+
+  let body = null;
+  let text = '';
+  if (cur === 'po') {
+    text = data.review.status === 'rejected'
+      ? ko ? `반려되었습니다 : ${data.review.note}. 필요한 조치 : 수정 후 다시 검토 요청하세요.` : `Rejected: ${data.review.note}. Action required: fix it and request review again.`
+      : ko ? '필요한 조치 : 조건을 확인하고 검토를 요청하세요.' : 'Action required: check the conditions and request review.';
+    body = (
+      <>
+        <Flex direction="column" gap="extra-small">{checkList}</Flex>
+        <Flex direction="row" gap="small">
+          <Button variant="primary" disabled={!data.ready || !!busy} onClick={() => run('req', { action: 'request_review' })}>
+            {busy === 'req' ? (ko ? '처리 중입니다...' : 'Working...') : ko ? '검토 요청' : 'Request review'}
+          </Button>
+        </Flex>
+      </>
+    );
+  } else if (cur === 'review') {
+    text = approver
+      ? ko ? '필요한 조치 : 주문을 확인하고 승인 또는 반려하세요.' : 'Action required: approve or reject the order.'
+      : ko ? '리전팀 Leader 승인을 기다리고 있습니다.' : 'Waiting for the region team leader approval.';
+    body = approver ? (
+      <>
+        <TextArea name="od_note" label={ko ? '검토 의견 (반려 시 필수)' : 'Review note (required to reject)'} value={note} onChange={(v: string) => setNote(v)} />
+        <Flex direction="row" gap="small">
+          <Button variant="primary" disabled={!!busy} onClick={() => run('ok', { action: 'review', decision: 'approve', note, approver, userName: userName(context) })}>
+            {busy === 'ok' ? (ko ? '처리 중입니다...' : 'Working...') : ko ? '승인' : 'Approve'}
+          </Button>
+          <Button disabled={!!busy || !note.trim()} onClick={() => run('no', { action: 'review', decision: 'reject', note, approver, userName: userName(context) })}>
+            {ko ? '반려' : 'Reject'}
+          </Button>
+        </Flex>
+      </>
+    ) : (
+      <Text variant="microcopy">{ko ? '승인 권한이 없습니다. 필요한 조치 : 리전팀 Leader에게 요청하세요.' : 'You do not have approval permission. Action required: ask the region team leader.'}</Text>
+    );
+  } else if (cur === 'processing') {
+    const issued = data.pi === 'issued';
+    text = issued
+      ? ko ? '필요한 조치 : 구매자가 PI를 승인하면 [구매자 승인 처리]를 누르세요.' : 'Action required: when the buyer approves the PI, click "Buyer approved".'
+      : ko ? '필요한 조치 : PI를 발행하세요.' : 'Action required: issue the PI.';
+    body = (
+      <>
+        <Flex direction="column" gap="extra-small">
+          <Text>{`${issued ? '✓' : '○'}  ${ko ? 'PI 발행' : 'PI issued'}`}</Text>
+          <Text>{`○  ${ko ? '구매자 PI 승인' : 'Buyer approved PI'}`}</Text>
+        </Flex>
+        <Flex direction="row" gap="small" align="center" wrap="wrap">
+          {issued ? (
+            <Button variant="primary" disabled={!!busy} onClick={() => run('pa', { action: 'pi', step: 'approve' })}>
+              {ko ? '구매자 승인 처리' : 'Buyer approved'}
+            </Button>
+          ) : (
+            <Button variant="primary" disabled={!!busy} onClick={() => run('pi', { action: 'pi', step: 'issue' })}>
+              {ko ? 'PI 발행 처리' : 'Mark PI issued'}
+            </Button>
+          )}
+          <Text variant="microcopy">{ko ? 'ⓘ PI PDF 생성은 다음 단계에서 연결됩니다.' : 'ⓘ PI PDF generation will be connected later.'}</Text>
+        </Flex>
+      </>
+    );
+  } else if (cur === 'confirming' || cur === 'dispatched') {
+    text = ko ? 'ERP 연동 대기 중입니다. I/F 개발 후 자동으로 진행됩니다.' : 'Waiting for ERP. It moves automatically after the interface is built.';
+    body = (
+      <Statistics>
+        <StatisticsItem label="UniERP I/F" number={data.erp.unierp || '--'} />
+        <StatisticsItem label="D365 I/F" number={data.erp.d365 || '--'} />
+        <StatisticsItem label="SO No." number={data.erp.so || '--'} />
+        <StatisticsItem label={ko ? '출고' : 'Shipment'} number={data.erp.shipment || '--'} />
+      </Statistics>
+    );
+  } else {
+    text = cur === 'lost' ? (ko ? '취소된 주문입니다.' : 'This order is cancelled.') : ko ? '주문이 완료되었습니다.' : 'The order is complete.';
+  }
+
+  return (
+    <Flex direction="column" gap="medium">
+      <StatusRow label={ko ? kr : en} variant={variant} text={`${ko ? '현재 단계' : 'Stage'} : ${data.stageLabel}`} />
+      <Steps stages={data.stages} current={cur} />
+      {err ? <Alert title={ko ? '오류' : 'Error'} variant="danger">{err}</Alert> : null}
+      <Text variant="microcopy">{text}</Text>
+      {body}
+      <Text variant="microcopy">
+        {joinVals(
+          `${ko ? '금액' : 'Amount'} ${data.amount}`,
+          data.confirmed && `${ko ? 'PI 확정' : 'PI confirmed'} ${data.confirmed}`,
+          reviewLine,
+          data.erp.branch && `ERP - Order Branch ${data.erp.branch}`,
+        )}
+      </Text>
+      {data.source ? (
+        <Flex direction="row" gap="small" align="center">
+          <Text variant="microcopy">{ko ? '원본 Opportunity' : 'Source opportunity'}</Text>
+          <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-3', objectId: Number(data.source.id) }}>
+            {data.source.dealname}
+          </CrmActionLink>
+        </Flex>
+      ) : null}
+      {footer}
+    </Flex>
+  );
+};
