@@ -74,7 +74,7 @@ type GuideItem = {
 };
 
 // 카드 설명 옆 버전 표기 — 배포할 때 함께 올림
-const CARD_VERSION = '20';
+const CARD_VERSION = '21';
 const CARD_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 const CARD_STAGE = 'Beta';
@@ -1610,7 +1610,6 @@ const OrderSetup = ({ context, actions }: any) => {
           >
             <Icon name="refresh" screenReaderText={t.refresh} />
           </Button>
-          <Text variant="microcopy">{`V.${CARD_VERSION}${CARD_STAGE ? ' ' + CARD_STAGE.charAt(0) : ''}`}</Text>
         </Flex>
         {hasItems && (
           <Button
