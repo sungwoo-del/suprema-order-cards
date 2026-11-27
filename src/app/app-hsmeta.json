@@ -30,7 +30,9 @@
         "crm.schemas.contacts.read",
         "crm.objects.owners.read",
         "crm.objects.custom.write",
-        "sales-email-read"
+        "sales-email-read",
+        "crm.objects.quotes.read",
+        "crm.objects.quotes.write"
       ],
       "optionalScopes": [],
       "conditionallyRequiredScopes": []

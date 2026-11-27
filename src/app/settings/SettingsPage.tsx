@@ -273,6 +273,8 @@ const SettingsPage = ({ context, actions }: any) => {
       <ConvertSettings lang={lang} actions={actions} />
       <Divider />
       <ReviewTeamsSettings lang={lang} actions={actions} />
+      <Divider />
+      <PiTemplateSettings lang={lang} actions={actions} />
     </Flex>
   );
 };
@@ -484,6 +486,74 @@ const ReviewTeamsSettings = ({ lang, actions }: { lang: Lang; actions: any }) =>
           {busy ? (ko ? '저장 중입니다...' : 'Saving...') : ko ? '저장' : 'Save'}
         </Button>
         <Button variant="secondary" onClick={() => setSel(saved)} disabled={!dirty || busy}>
+          {ko ? '되돌리기' : 'Revert'}
+        </Button>
+      </Flex>
+    </Flex>
+  );
+};
+
+// ── PI 견적 템플릿 : Order Progress 카드의 [PI 견적서 만들기]에 쓸 견적 템플릿
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const PiTemplateSettings = ({ lang, actions }: { lang: Lang; actions: any }) => {
+  const ko = lang === 'ko';
+  const [list, setList] = useState<{ id: string; name: string }[]>([]);
+  const [saved, setSaved] = useState('');
+  const [sel, setSel] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await call('order_cards', { action: 'pi_template_get', lang });
+        setList(r.templates || []);
+        setSaved(r.selected || '');
+        setSel(r.selected || '');
+        if (r.error) setError(r.error);
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [lang]);
+  const save = async () => {
+    setBusy(true);
+    try {
+      const r = await call('order_cards', { action: 'pi_template_save', templateId: sel, lang });
+      setSaved(r.selected || '');
+      actions?.addAlert?.({ type: 'success', message: ko ? 'PI 견적 템플릿을 저장했습니다.' : 'PI quote template saved.' });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (loading) return <LoadingSpinner label={ko ? '불러오는 중입니다...' : 'Loading...'} />;
+  const name = (id: string) => list.find((x) => x.id === id)?.name || id;
+  return (
+    <Flex direction="column" gap="small">
+      <Heading>{ko ? 'PI 견적 템플릿 (Order Progress 카드)' : 'PI quote template (Order Progress card)'}</Heading>
+      <Text>
+        {ko
+          ? 'Order Processing 단계의 [PI 견적서 만들기]가 사용할 견적 템플릿입니다. 지정하지 않으면 계정의 기본 견적 템플릿을 사용합니다.'
+          : 'The quote template used by "Create PI quote" in Order Processing. If none is set, the account default quote template is used.'}
+      </Text>
+      {error ? <Alert title={ko ? '알림' : 'Notice'} variant="warning">{error}</Alert> : null}
+      <Select
+        label={ko ? 'PI 템플릿' : 'PI template'}
+        placeholder={ko ? '템플릿을 선택하세요' : 'Select a template'}
+        options={[{ label: ko ? '기본 템플릿 사용' : 'Use default template', value: '' }, ...list.map((x) => ({ label: x.name, value: x.id }))]}
+        value={sel}
+        onChange={(v) => setSel(String(v ?? ''))}
+      />
+      <Text variant="microcopy">{ko ? '저장된 템플릿 : ' : 'Saved template: '}{saved ? name(saved) : ko ? '기본 템플릿' : 'Default template'}</Text>
+      <Flex direction="row" gap="small">
+        <Button variant="primary" onClick={save} disabled={sel === saved || busy}>
+          {busy ? (ko ? '저장 중입니다...' : 'Saving...') : ko ? '저장' : 'Save'}
+        </Button>
+        <Button variant="secondary" onClick={() => setSel(saved)} disabled={sel === saved || busy}>
           {ko ? '되돌리기' : 'Revert'}
         </Button>
       </Flex>

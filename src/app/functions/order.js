@@ -1,5 +1,5 @@
 // Opportunity → Order 생성 · Order 진행(검토 · PI) 카드 공용 서버 함수
-// actions: create_load · create_order · progress_load · request_review · review · pi
+// actions: create_load · create_order · progress_load · request_review · review · pi(quote · issue · approve) · pi_template_get/save
 // 단계 진입 조건(Stage Gate)은 카드에서 검사 — docs/06_Order_프로세스.md
 // 메시지는 사용자 UI 언어(lang)로 반환 — 한국어 UI일 때만 한국어, 그 외 영어
 
@@ -297,6 +297,7 @@ async function progressLoad(p, lang, userId) {
     checks: c.list, ready: c.ok,
     review: { status: d.order_review_status || '', note: d.order_review_note || '', by: d.order_reviewed_by || '' },
     pi: d.pi_status || 'not_issued',
+    piQuote: (['processing', 'confirming', 'dispatched', 'closed'].includes(STEP_KEYS.find((k) => S[k] === d.dealstage) || '')) ? await piQuote(p.dealId, lang) : null,
     amount: fmt(d.amount, d.deal_currency_code), confirmed: d.confirmed_amount ? fmt(d.confirmed_amount, d.deal_currency_code) : '',
     erp: { branch: d.selling_entity || '', target: d.erp_target || '', unierp: d.unierp_if_status || '', d365: d.d365_if_status || '',
       so: d.unierp_so_no || d.d365_so_no || '', po: d.d365_po_no || '', shipment: d.shipment_status || '' },
@@ -338,13 +339,98 @@ async function review(p, lang, userId) {
 async function pi(p, lang) {
   const d = await readDeal(p.dealId);
   if (d.dealstage !== S.processing) throw new Error(M(lang, 'PI can be handled only in Order Processing.', 'Order Processing 단계에서만 PI 처리가 가능합니다.'));
-  if (p.step === 'issue') await setDeal(p.dealId, { pi_status: 'issued' });
+  if (p.step === 'quote') return await createPiQuote(p, lang);
+  if (p.step === 'issue') await setDeal(p.dealId, { pi_status: 'issued' }); // 수동 기록 (견적 권한이 없을 때)
   else if (p.step === 'approve') {
     if (d.pi_status !== 'issued') throw new Error(M(lang, 'The PI has not been issued. Action required: issue the PI first.', 'PI가 발행되지 않았습니다. 필요한 조치 : PI를 먼저 발행하세요.'));
     await setDeal(p.dealId, { pi_status: 'buyer_approved', confirmed_amount: d.amount || '0', dealstage: S.confirming });
   } else throw new Error('Unknown step');
   await touch(p.dealId, 'op');
   return { ok: true };
+}
+
+
+// ---------- PI = HubSpot 견적(CPQ Quote) + PI 템플릿 ----------
+const KEY_PI_TEMPLATE = 'pi_quote_template';
+const QUOTE_PROPS = ['hs_title', 'hs_status', 'hs_expiration_date', 'hs_quote_link', 'hs_pdf_download_link', 'hs_createdate', 'hs_quote_amount', 'hs_currency'];
+const QUOTE_STATUS = {
+  DRAFT: ['Draft', '초안', 'default'], PENDING_APPROVAL: ['Pending approval', '승인 대기', 'warning'], APPROVAL_NOT_NEEDED: ['Published', '게시됨', 'info'],
+  APPROVED: ['Published', '게시됨', 'info'], REJECTED: ['Rejected', '반려', 'danger'], ACCEPTED: ['Accepted', '구매자 승인', 'success'],
+};
+const scopeError = (e) => e && (e.status === 403 || e.status === 401);
+const noScopeMsg = (lang) => M(lang, 'The app has no quote permission. Action required: ask a Super Admin to re-authorize the app.', '앱에 견적 권한이 없습니다. 필요한 조치 : 슈퍼 관리자에게 앱 재승인을 요청하세요.');
+
+async function quoteTemplates() {
+  const body = { filterGroups: [{ filters: [{ propertyName: 'hs_type', operator: 'EQ', value: 'cpq_template' }] }], properties: ['hs_name', 'hs_type'], limit: 100 };
+  let data;
+  try { data = await api('/crm/v3/objects/quote_template/search', { method: 'POST', body }); }
+  catch (e) { if (scopeError(e)) throw e; data = await api('/crm/objects/2026-03/quote_templates/search', { method: 'POST', body }); }
+  return (data.results || []).map((r) => ({ id: String(r.id), name: (r.properties || {}).hs_name || String(r.id) }));
+}
+
+// Order에 연결된 견적 중 가장 최근 것 = PI
+async function piQuote(dealId, lang) {
+  let ids;
+  try { ids = (await assocAll('deals', dealId, 'quotes')).map((r) => r.id); }
+  catch (e) { if (scopeError(e)) return { error: 'scope', message: noScopeMsg(lang) }; throw e; }
+  if (!ids.length) return null;
+  const data = await api('/crm/v3/objects/quotes/batch/read', { method: 'POST', body: { properties: QUOTE_PROPS, inputs: ids.map((id) => ({ id })) } });
+  const list = (data.results || []).map((r) => ({ id: String(r.id), ...r.properties }));
+  list.sort((a, b) => String(b.hs_createdate || '').localeCompare(String(a.hs_createdate || '')));
+  const q = list[0];
+  const st = QUOTE_STATUS[q.hs_status] || [q.hs_status || '-', q.hs_status || '-', 'default'];
+  return {
+    id: q.id, title: q.hs_title || '', status: q.hs_status || '', statusLabel: M(lang, st[0], st[1]), variant: st[2],
+    link: q.hs_quote_link || '', pdf: q.hs_pdf_download_link || '', expires: String(q.hs_expiration_date || '').slice(0, 10),
+    amount: q.hs_quote_amount ? fmt(q.hs_quote_amount, q.hs_currency) : '',
+  };
+}
+
+async function createPiQuote(p, lang) {
+  const d = await readDeal(p.dealId);
+  if (d.pipeline !== ORDER_PIPELINE || d.dealstage !== S.processing) throw new Error(M(lang, 'PI can be issued only in Order Processing.', 'Order Processing 단계에서만 PI 발행이 가능합니다.'));
+  const existing = await piQuote(p.dealId, lang);
+  if (existing && existing.error) throw new Error(existing.message);
+  if (existing && existing.status !== 'REJECTED') throw new Error(M(lang, 'A PI quote already exists. Action required: open the existing quote.', '이미 PI 견적서가 있습니다. 필요한 조치 : 기존 견적서를 여세요.'));
+  const lines = await lineItems(p.dealId);
+  if (!lines.length) throw new Error(M(lang, 'There are no line items. Action required: add line items to the order.', '라인아이템이 없습니다. 필요한 조치 : 주문에 라인아이템을 추가하세요.'));
+  const contacts = (await assocAll('deals', p.dealId, 'contacts')).map((r) => r.id);
+  if (!contacts.length) throw new Error(M(lang, 'There is no buyer contact. Action required: associate a contact with the order.', '구매 담당자가 없습니다. 필요한 조치 : 주문에 담당자를 연결하세요.'));
+  const companies = (await assocAll('deals', p.dealId, 'companies')).map((r) => r.id);
+  const templateId = String(await readJson(KEY_PI_TEMPLATE, '') || '');
+  const full = await api(`/crm/v3/objects/deals/${p.dealId}?properties=dealname`);
+  const exp = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10); // Validity : 발행일로부터 1개월
+  const properties = { hs_title: `PI - ${(full.properties || {}).dealname || p.dealId}`, hs_expiration_date: exp, hs_template_type: 'CPQ_QUOTE', hs_language: 'en' };
+  if (d.deal_currency_code) properties.hs_currency = d.deal_currency_code;
+  if (d.hubspot_owner_id) properties.hubspot_owner_id = d.hubspot_owner_id;
+  const tplAssoc = templateId ? [{ to: { id: templateId }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 286 }] }] : [];
+  let quote;
+  try { quote = await api('/crm/v3/objects/quotes', { method: 'POST', body: { properties, associations: tplAssoc } }); }
+  catch (e) {
+    if (scopeError(e)) throw new Error(noScopeMsg(lang));
+    if (!tplAssoc.length) throw e;
+    quote = await api('/crm/v3/objects/quotes', { method: 'POST', body: { properties } }); // 템플릿 연결 실패 시 기본 템플릿
+  }
+  const qid = String(quote.id);
+  const link = (type, id) => api(`/crm/v4/objects/quotes/${qid}/associations/default/${type}/${id}`, { method: 'PUT' });
+  await link('deals', p.dealId);
+  await link('contacts', contacts[0]);
+  if (companies[0]) { try { await link('companies', companies[0]); } catch (e) { /* 선택 */ } }
+  // 라인아이템은 견적 전용 사본으로 연결 (거래 라인아이템은 그대로 유지)
+  const copyProps = LINE_PROPS.filter((k) => k !== 'hs_position_on_quote');
+  for (let i = 0; i < lines.length; i += 100) {
+    const inputs = lines.slice(i, i + 100).map((l, j) => {
+      const props = {};
+      for (const k of copyProps) if (l[k] !== null && l[k] !== undefined && l[k] !== '') props[k] = l[k];
+      props.hs_position_on_quote = String(i + j);
+      return { properties: props };
+    });
+    const made = await api('/crm/v3/objects/line_items/batch/create', { method: 'POST', body: { inputs } });
+    for (const r of made.results || []) await link('line_items', r.id);
+  }
+  await setDeal(p.dealId, { pi_status: 'issued' });
+  await touch(p.dealId, 'op');
+  return { ok: true, quoteId: qid, templateUsed: !!templateId };
 }
 
 exports.main = async (context) => {
@@ -356,6 +442,12 @@ exports.main = async (context) => {
     switch (p.action) {
       case 'review_teams_get': return { ok: true, teams: (await allTeams()).map((t) => ({ id: t.id, name: t.name, members: t.members.length })), allowed: (await readJson(KEY_REVIEW_TEAMS, [])).map(String) };
       case 'review_teams_save': { const ids = (p.teamIds || []).map(String); await writeJson(KEY_REVIEW_TEAMS, ids); return { ok: true, allowed: ids }; }
+      case 'pi_template_get': {
+        let templates = []; let error = '';
+        try { templates = await quoteTemplates(); } catch (e) { error = scopeError(e) ? noScopeMsg(lang) : e.message; }
+        return { ok: true, templates, selected: String(await readJson(KEY_PI_TEMPLATE, '') || ''), error };
+      }
+      case 'pi_template_save': { await writeJson(KEY_PI_TEMPLATE, String(p.templateId || '')); return { ok: true, selected: String(p.templateId || '') }; }
       default: break;
     }
     if (!p.dealId) throw new Error(M(lang, 'There is no deal. Action required: open a deal record.', '거래가 없습니다. 필요한 조치 : 거래 레코드에서 여세요.'));

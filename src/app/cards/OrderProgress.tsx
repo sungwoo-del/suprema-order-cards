@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import {
   Alert,
+  Box,
   DescriptionList,
   DescriptionListItem,
   Flex,
   Link,
   LoadingButton,
   LoadingSpinner,
+  StatusTag,
   Text,
   TextArea,
+  Tile,
   hubspot,
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
@@ -129,29 +132,62 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
       </Text>
     );
   } else if (cur === 'processing') {
-    const issued = data.pi === 'issued';
-    text = issued
-      ? ko ? '필요한 조치 : 구매자가 PI를 승인하면 [구매자 승인 처리]를 누르세요.' : 'Action required: when the buyer approves the PI, click "Buyer approved".'
-      : ko ? '필요한 조치 : PI를 발행하세요.' : 'Action required: issue the PI.';
+    const q = data.piQuote;
+    const noScope = !!(q && q.error);
+    const hasQuote = !!(q && q.id && q.status !== 'REJECTED');
+    const issued = data.pi === 'issued' || hasQuote;
+    const published = hasQuote && q.status !== 'DRAFT' && q.status !== 'PENDING_APPROVAL';
+    text = !issued
+      ? ko ? '필요한 조치 : PI 견적서를 만드세요.' : 'Action required: create the PI quote.'
+      : hasQuote && !published
+        ? ko ? '필요한 조치 : 견적서를 열어 내용을 확인하고 게시하세요.' : 'Action required: open the quote, review it, and publish it.'
+        : ko ? '필요한 조치 : 구매자가 PI를 승인하면 [구매자 승인 처리]를 누르세요.' : 'Action required: when the buyer approves the PI, click "Buyer approved".';
     body = (
       <>
         <CheckList
           items={[
-            { key: 'pi', ok: issued, text: ko ? 'PI 발행' : 'PI issued' },
+            { key: 'pi', ok: issued, text: ko ? 'PI 견적서 생성' : 'PI quote created' },
+            { key: 'pub', ok: published || (issued && !hasQuote), text: ko ? '견적서 게시 (구매자에게 전달)' : 'Quote published (sent to buyer)' },
             { key: 'buyer', ok: false, text: ko ? '구매자 PI 승인' : 'Buyer approved PI' },
           ]}
         />
+        {noScope ? <Alert title={ko ? '견적 권한 없음' : 'No quote permission'} variant="warning">{q.message}</Alert> : null}
+        {hasQuote ? (
+          <Tile compact>
+            <Flex direction="row" gap="small" align="center" wrap="wrap">
+              <Box flex={1}>
+                <Flex direction="column" gap="extra-small">
+                  <Link href={{ url: objUrl(PORTAL, '0-14', q.id), external: true }}>{q.title || 'PI'}</Link>
+                  <Text variant="microcopy">{joinVals(q.amount, q.expires ? (ko ? `유효기간 ${q.expires}` : `Expires ${q.expires}`) : '')}</Text>
+                </Flex>
+              </Box>
+              <Box flex="none">
+                <Flex direction="row" gap="small" align="center">
+                  <StatusTag variant={q.variant as 'default' | 'success' | 'warning' | 'danger' | 'info'}>{q.statusLabel}</StatusTag>
+                  {q.pdf ? <Link href={{ url: q.pdf, external: true }}>PDF</Link> : null}
+                  {q.link ? <Link href={{ url: q.link, external: true }}>{ko ? '구매자 링크' : 'Buyer link'}</Link> : null}
+                </Flex>
+              </Box>
+            </Flex>
+          </Tile>
+        ) : null}
         <Flex direction="row" gap="small" align="center" wrap="wrap">
           {issued ? (
             <LoadingButton variant="primary" loading={busy === 'pa'} disabled={!!busy} onClick={() => run('pa', { action: 'pi', step: 'approve' }, ko ? '구매자 승인을 기록했습니다. Order Confirming으로 이동했습니다.' : 'Buyer approval recorded. Moved to Order Confirming.')}>
               {ko ? '구매자 승인 처리' : 'Buyer approved'}
             </LoadingButton>
-          ) : (
+          ) : noScope ? (
             <LoadingButton variant="primary" loading={busy === 'pi'} disabled={!!busy} onClick={() => run('pi', { action: 'pi', step: 'issue' }, ko ? 'PI 발행을 기록했습니다.' : 'PI issue recorded.')}>
-              {ko ? 'PI 발행 처리' : 'Mark PI issued'}
+              {ko ? 'PI 발행 처리 (수동)' : 'Mark PI issued (manual)'}
+            </LoadingButton>
+          ) : (
+            <LoadingButton variant="primary" loading={busy === 'pq'} disabled={!!busy} onClick={() => run('pq', { action: 'pi', step: 'quote' }, ko ? 'PI 견적서를 만들었습니다. 견적서를 열어 확인 후 게시하세요.' : 'PI quote created. Open it, review, and publish.')}>
+              {ko ? 'PI 견적서 만들기' : 'Create PI quote'}
             </LoadingButton>
           )}
-          <Text variant="microcopy">{ko ? 'ⓘ PI PDF 생성은 다음 단계에서 연결됩니다.' : 'ⓘ PI PDF generation will be connected later.'}</Text>
+          {!issued && !noScope ? (
+            <Text variant="microcopy">{ko ? 'ⓘ 라인아이템 · 담당자 · 회사를 복사한 견적서 초안을 PI 템플릿으로 만듭니다.' : 'ⓘ Creates a draft quote from the PI template with line items, contact, and company.'}</Text>
+          ) : null}
         </Flex>
       </>
     );
