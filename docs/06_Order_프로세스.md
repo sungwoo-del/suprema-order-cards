@@ -40,3 +40,9 @@ order_review_status (Pending/Approved/Rejected) · order_review_note · order_re
 - W4b 중복본 5500368625 게시 취소(원본 5496107742 유지)
 - Order 단계 수동 변경 제한: 사용자가 추후 적용
 - 기본·팀별 보기: 팀 화면 작업 때 적용
+
+## 진행 기록 (2026-11-28)
+- 견적서 권한 승인 완료, Order Progress 카드 [PI 견적서 만들기] 실제 생성 확인 (템플릿 연결 286 정상)
+- 판매자(Sales Manager) = 거래 소유자 자동 입력 (없으면 사용자)
+- PI 보는 곳 : Order 거래 → Order Progress 탭의 견적서 칸 / 거래 오른쪽 '견적' / 영업 → 견적. PDF · 구매자 링크는 견적서 게시 후 생성
+
