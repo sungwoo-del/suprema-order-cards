@@ -18,9 +18,4 @@ bump src/app/cards/EndCustomerShared.tsx EC
 bump src/app/cards/ConvertShared.tsx CV
 bump src/app/cards/OrderShared.tsx OD
 
-# 앱 이름 = 카드 하단 "…에 의해 구동됨" 문구 → "HelloDigital(V.NN B)"
-APP=src/app/app-hsmeta.json
-cur=$(grep -oE '"name": "HelloDigital\(V\.[0-9]+' "$APP" | grep -oE '[0-9]+$' || true)
-nxt=$(printf "%02d" $((10#${cur:-18} + 1)))
-sed -E -i.bak "s/\"name\": \"HelloDigital[^\"]*\"/\"name\": \"HelloDigital(V.$nxt B)\"/" "$APP" && rm -f "$APP.bak"
-echo "▶ APP V.$nxt B"
+# 앱 이름은 "HelloDigital" 고정. 카드별 버전은 각 카드 하단에 "V.NN B"로 표시

@@ -12,7 +12,7 @@ import {
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import { Editor, PORTAL, T, ecVersion, getLang, objUrl, useEC } from './EndCustomerShared.tsx';
-import { FooterLine, StatusRow, joinVals, toast } from './UiKit.tsx';
+import { IconText, FooterLine, StatusRow, joinVals, toast } from './UiKit.tsx';
 
 // End Customer(최종 고객사) — 오른쪽 사이드바 (Ver.04 개편)
 // 1열 · 표 없음 · 편집/연결은 Panel (G7)
@@ -74,7 +74,7 @@ const EndCustomerSide = ({ context, actions }: { context: any; actions: any }) =
         </Text>
         <Flex direction="row">
           <Button variant="primary" size="sm" overlay={panel}>
-            {lang === 'ko' ? '연결' : 'Link'}
+            <IconText name="link">{lang === 'ko' ? '연결' : 'Link'}</IconText>
           </Button>
         </Flex>
         {footer}
@@ -86,7 +86,7 @@ const EndCustomerSide = ({ context, actions }: { context: any; actions: any }) =
       <StatusRow
         label={t.linked}
         variant="success"
-        action={<Button size="xs" overlay={panel}>{t.edit}</Button>}
+        action={<Button size="xs" overlay={panel}><IconText name="edit">{t.edit}</IconText></Button>}
       />
       {data.extraCompanies.length ? (
         <Alert title={lang === 'ko' ? '확인 필요' : 'Check'} variant="warning">

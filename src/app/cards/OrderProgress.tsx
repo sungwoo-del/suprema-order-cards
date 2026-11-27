@@ -16,7 +16,7 @@ import {
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import { PORTAL, callOD, editorUrl, getLang, objUrl, odVersion, useOD, userName } from './OrderShared.tsx';
-import { CheckList, FooterLine, Progress, StatusRow, TagVariant, joinVals, toast } from './UiKit.tsx';
+import { IconText, CheckList, FooterLine, Progress, StatusRow, TagVariant, joinVals, toast } from './UiKit.tsx';
 
 // Order Progress (주문 진행) — Order 가운데 카드 (Ver.01)
 // 단계별 진입 조건 검사 + 동작 : 검토 요청 → 승인/반려 → PI 발행 → 구매자 승인 → (ERP 자동)
@@ -102,7 +102,7 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
         {checkList}
         <Flex direction="row" gap="small">
           <LoadingButton variant="primary" loading={busy === 'req'} disabled={!data.ready || !!busy} onClick={() => run('req', { action: 'request_review' }, ko ? '검토를 요청했습니다. Under Review로 이동했습니다.' : 'Review requested. Moved to Under Review.')}>
-            {ko ? '검토 요청' : 'Request review'}
+            <IconText name="send">{ko ? '검토 요청' : 'Request review'}</IconText>
           </LoadingButton>
         </Flex>
       </>
@@ -117,10 +117,10 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
         <TextArea name="od_note" label={ko ? '검토 의견 (반려 시 필수)' : 'Review note (required to reject)'} value={note} onChange={(v: string) => setNote(v)} />
         <Flex direction="row" gap="small">
           <LoadingButton variant="primary" loading={busy === 'ok'} disabled={!!busy} onClick={() => run('ok', { action: 'review', decision: 'approve', note, userName: userName(context) }, ko ? '승인했습니다. Order Processing으로 이동했습니다.' : 'Approved. Moved to Order Processing.')}>
-            {ko ? '승인' : 'Approve'}
+            <IconText name="checkCircle">{ko ? '승인' : 'Approve'}</IconText>
           </LoadingButton>
           <LoadingButton loading={busy === 'no'} disabled={!!busy || !note.trim()} onClick={() => run('no', { action: 'review', decision: 'reject', note, userName: userName(context) }, ko ? '반려했습니다. PO Registration으로 되돌렸습니다.' : 'Rejected. Moved back to PO Registration.')}>
-            {ko ? '반려' : 'Reject'}
+            <IconText name="xCircle">{ko ? '반려' : 'Reject'}</IconText>
           </LoadingButton>
         </Flex>
       </>
@@ -174,15 +174,15 @@ const OrderProgress = ({ context, actions }: { context: any; actions: any }) => 
         <Flex direction="row" gap="small" align="center" wrap="wrap">
           {issued ? (
             <LoadingButton variant="primary" loading={busy === 'pa'} disabled={!!busy} onClick={() => run('pa', { action: 'pi', step: 'approve' }, ko ? '구매자 승인을 기록했습니다. Order Confirming으로 이동했습니다.' : 'Buyer approval recorded. Moved to Order Confirming.')}>
-              {ko ? '구매자 승인 처리' : 'Buyer approved'}
+              <IconText name="success">{ko ? '구매자 승인 처리' : 'Buyer approved'}</IconText>
             </LoadingButton>
           ) : noScope ? (
             <LoadingButton variant="primary" loading={busy === 'pi'} disabled={!!busy} onClick={() => run('pi', { action: 'pi', step: 'issue' }, ko ? 'PI 발행을 기록했습니다.' : 'PI issue recorded.')}>
-              {ko ? 'PI 발행 처리 (수동)' : 'Mark PI issued (manual)'}
+              <IconText name="signature">{ko ? 'PI 발행 처리 (수동)' : 'Mark PI issued (manual)'}</IconText>
             </LoadingButton>
           ) : (
             <LoadingButton variant="primary" loading={busy === 'pq'} disabled={!!busy} onClick={() => run('pq', { action: 'pi', step: 'quote' }, ko ? 'PI 견적서를 만들었습니다. 견적서를 열어 확인 후 게시하세요.' : 'PI quote created. Open it, review, and publish.')}>
-              {ko ? 'PI 견적서 만들기' : 'Create PI quote'}
+              <IconText name="quote">{ko ? 'PI 견적서 만들기' : 'Create PI quote'}</IconText>
             </LoadingButton>
           )}
           {!issued && !noScope ? (

@@ -26,19 +26,19 @@ import {
   EmptyState,
   hubspot,
 } from '@hubspot/ui-extensions';
-import { SectionHead, joinVals } from './UiKit.tsx';
+import { IconText, SectionHead, joinVals } from './UiKit.tsx';
 import { CrmActionButton } from '@hubspot/ui-extensions/crm';
 
 // End Customer(최종 고객사) 카드 공용 — 가운데 컬럼 카드 · 오른쪽 사이드바 카드가 함께 씀
 // 규칙 : 회사 1개 · 담당자 여러 명 · 둘 다 "End Customer" 연결 라벨
 // deploy.sh가 배포할 때 EC_VERSION / EC_UPDATED 를 자동으로 올립니다.
-export const EC_VERSION = '16';
+export const EC_VERSION = '17';
 export const EC_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const EC_STAGE = 'Beta';
 export const PORTAL = 245822501;
 export const ecVersion = () =>
-  `Update : ${EC_UPDATED} / Ver.${EC_VERSION}${EC_STAGE ? ' ' + EC_STAGE : ''}`;
+  `V.${EC_VERSION}${EC_STAGE ? ' ' + EC_STAGE.charAt(0) : ''}`;
 
 export type Lang = 'en' | 'ko';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,14 +109,14 @@ export const T = {
       'The deal owner team has no region. All companies are shown.',
     noResults: (r: string) =>
       r
-        ? `There are no ${r} companies. Action required: create one with "+ New company".`
-        : 'There are no matching companies. Action required: create one with "+ New company".',
-    newCompany: '+ New company',
-    newContact: '+ New contact',
+        ? `There are no ${r} companies. Action required: create one with "New company".`
+        : 'There are no matching companies. Action required: create one with "New company".',
+    newCompany: 'New company',
+    newContact: 'New contact',
     pickCompanyFirst: 'Select a company first.',
     contactsOf: (n: number) => `${n} contacts linked to this company · select one or more`,
     noContacts:
-      'There are no contacts linked to this company. Action required: create one with "+ New contact".',
+      'There are no contacts linked to this company. Action required: create one with "New contact".',
     otherLinked: 'Linked from another company',
     saveHint:
       'You can save with only the company or only contacts. Both are linked with the "End Customer" label.',
@@ -142,11 +142,11 @@ export const T = {
     newTab: 'New tab',
     change: 'Change',
     unlink: 'Unlink',
-    addContact: '+ Add contact',
+    addContact: 'Add contact',
     select: 'Select end customer',
     emptyTitle: 'There is no end customer.',
     emptyAction: 'Action required: select the end customer.',
-    noContactLinked: 'There are no linked contacts. Action required: add one with "+ Add contact".',
+    noContactLinked: 'There are no linked contacts. Action required: add one with "Add contact".',
     noCompanyLinked: 'There is no end customer company.',
     extra: (n: string) => `More than one company has the End Customer label (${n}). Action required: keep one with "Change".`,
     lCountry: '#Country',
@@ -191,13 +191,13 @@ export const T = {
     noFilter: '거래 소유자 팀의 리전을 확인할 수 없습니다. 전체 회사를 표시합니다.',
     noResults: (r: string) =>
       r
-        ? `${r} 리전 회사가 없습니다. 필요한 조치 : "+ 새 회사"로 최종 고객사를 만드세요.`
-        : '검색 결과가 없습니다. 필요한 조치 : "+ 새 회사"로 최종 고객사를 만드세요.',
-    newCompany: '+ 새 회사',
-    newContact: '+ 새 담당자',
+        ? `${r} 리전 회사가 없습니다. 필요한 조치 : "새 회사"로 최종 고객사를 만드세요.`
+        : '검색 결과가 없습니다. 필요한 조치 : "새 회사"로 최종 고객사를 만드세요.',
+    newCompany: '새 회사',
+    newContact: '새 담당자',
     pickCompanyFirst: '회사를 먼저 선택하세요.',
     contactsOf: (n: number) => `연결된 담당자 ${n}명 · 여러 명 선택 가능`,
-    noContacts: '이 회사에 연결된 담당자가 없습니다. 필요한 조치 : "+ 새 담당자"로 만드세요.',
+    noContacts: '이 회사에 연결된 담당자가 없습니다. 필요한 조치 : "새 담당자"로 만드세요.',
     otherLinked: '다른 회사에서 연결됨',
     saveHint:
       '회사나 담당자 중 하나만 골라도 저장할 수 있습니다. 둘 다 "End Customer" 라벨로 연결됩니다.',
@@ -222,7 +222,7 @@ export const T = {
     newTab: '새 탭',
     change: '변경',
     unlink: '연결 해제',
-    addContact: '+ 담당자 추가',
+    addContact: '담당자 추가',
     select: '최종 고객사 선택',
     emptyTitle: '최종 고객사가 없습니다.',
     emptyAction: '필요한 조치 : 최종 고객사를 선택하세요.',
@@ -518,7 +518,7 @@ export const Editor = ({
               : ko ? `최근 수정 순 ${shown.length}건` : `${shown.length} recently updated`}
           </Text>
           <Link href={{ url: objUrl(PORTAL, '0-2', dealId), external: false }} preventDefault onClick={() => { setMode('company'); setForm({ name: query }); setListOpen(false); }}>
-            {ko ? '찾는 회사가 없나요? + 새 회사' : 'Not listed? + New company'}
+            <IconText name="add">{ko ? '찾는 회사가 없나요? 새 회사' : 'Not listed? New company'}</IconText>
           </Link>
         </Flex>
       ) : null}
@@ -596,7 +596,7 @@ export const Editor = ({
         action={
           company && list !== null && mode !== 'contact' ? (
             <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setMode('contact'); setForm({}); }}>
-              {t.newContact}
+              <IconText name="add">{t.newContact}</IconText>
             </Link>
           ) : undefined
         }

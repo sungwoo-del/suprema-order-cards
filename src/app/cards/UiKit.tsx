@@ -76,10 +76,9 @@ export const FooterLine = ({
   <>
     <Divider />
     {/* 앱 버전은 HubSpot 하단 '…에 의해 구동됨' 앱 이름에 표기 (bump.sh) */}
-    <Flex direction="row" justify="end" align="center">
-      <Link href={{ url: href, external: false }} preventDefault onClick={onRefresh}>
-        {refreshLabel}
-      </Link>
+    <Flex direction="row" justify="end" align="center" gap="small">
+      <Text variant="microcopy">{version}</Text>
+      <RefreshLink label={refreshLabel} href={href} onRefresh={onRefresh} />
     </Flex>
   </>
 );
@@ -116,3 +115,18 @@ export const toast = (actions: any, message: string, type: 'success' | 'warning'
     /* 무시 */
   }
 };
+
+// 새로고침 — 아이콘만 (스크린리더용 문구 포함)
+export const RefreshLink = ({ label, href, onRefresh }: { label: string; href: string; onRefresh: () => void }) => (
+  <Link href={{ url: href, external: false }} preventDefault onClick={onRefresh}>
+    <Icon name="refresh" screenReaderText={label} />
+  </Link>
+);
+
+// 버튼 · 링크 앞 아이콘 + 글자
+type IconName = React.ComponentProps<typeof Icon>['name'];
+export const IconText = ({ name, children }: { name: IconName; children: React.ReactNode }) => (
+  <>
+    <Icon name={name} size="sm" /> {children}
+  </>
+);

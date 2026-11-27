@@ -27,7 +27,7 @@ import {
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import { PORTAL, T, callCV, cvVersion, getLang, objUrl, useCV } from './ConvertShared.tsx';
-import { FooterLine, Progress, StatusRow, joinVals, toast } from './UiKit.tsx';
+import { IconText, FooterLine, Progress, StatusRow, joinVals, toast } from './UiKit.tsx';
 
 // Lead(Partner) → Opportunity 전환 — 가운데 컬럼 카드 (Ver.04 개편 · docs/05_UI_UX_지침.md)
 // 상태 : 대기 → 가능 → 완료 / Opportunity 화면에서는 원본 Lead
@@ -295,7 +295,7 @@ const ConvertOpp = ({ context, actions }: { context: any; actions: any }) => {
       </Accordion>
       <Flex direction="row" gap="small" align="center" wrap="wrap">
         <Button variant="primary" disabled={!data.hasOwner} overlay={modal}>
-          {t.create}
+          <IconText name="add">{t.create}</IconText>
         </Button>
         <Text variant="microcopy">{joinVals(data.owner && `Owner : ${data.owner}`, closeVal && `${ko ? '마감일' : 'Close date'} ${closeVal}`)}</Text>
       </Flex>

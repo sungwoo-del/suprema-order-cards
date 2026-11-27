@@ -19,7 +19,7 @@ import {
   Tile,
   hubspot,
 } from '@hubspot/ui-extensions';
-import { CrmActionLink } from '@hubspot/ui-extensions/crm';
+import { CrmActionLink, CrmAssociationPivot } from '@hubspot/ui-extensions/crm';
 import {
   Editor,
   PORTAL,
@@ -37,6 +37,7 @@ import {
   StatusRow,
   joinVals,
   toast,
+  IconText,
 } from './UiKit.tsx';
 
 // End Customer(최종 고객사) — 가운데 컬럼 카드 (Ver.04 개편 · docs/05_UI_UX_지침.md)
@@ -58,12 +59,16 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
   const [changeCompany, setChangeCompany] = useState(false);
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
+  const [pivotKey, setPivotKey] = useState(0);
 
   const footer = (
     <FooterLine
       version={ecVersion()}
       refreshLabel={t.refresh}
-      onRefresh={load}
+      onRefresh={() => {
+        load();
+        setPivotKey((k) => k + 1);
+      }}
       href={objUrl(portalId, '0-3', dealId)}
     />
   );
@@ -86,7 +91,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
       action={
         !empty && !editing ? (
           <Button size="xs" onClick={() => setEditing(true)}>
-            {t.edit}
+            <IconText name="edit">{t.edit}</IconText>
           </Button>
         ) : undefined
       }
@@ -103,6 +108,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
           data={data}
           onSaved={(d) => {
             setData(d);
+            setPivotKey((k) => k + 1);
             setEditing(false);
             setChangeCompany(false);
             notify();
@@ -132,6 +138,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
     setErr('');
     try {
       setData(await callEC({ action: 'unlink', dealId, lang, kind, id }));
+      setPivotKey((k) => k + 1);
       notify();
       toast(
         actions,
@@ -229,13 +236,13 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
                       setEditing(true);
                     }}
                   >
-                    {t.changeCompany}
+                    <IconText name="replace">{t.changeCompany}</IconText>
                   </Button>
                   <Button
                     size="xs"
                     overlay={unlinkModal('company', co.id, co.name)}
                   >
-                    {t.unlink}
+                    <IconText name="remove">{t.unlink}</IconText>
                   </Button>
                 </Flex>
               </Box>
@@ -246,67 +253,24 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
         )}
       </Flex>
 
-      {/* 담당자 — 표 (행 동작 : 오른쪽 텍스트 링크 [해제]) */}
+      {/* 담당자 — HubSpot 기본 연결 목록 */}
       <Flex direction="column" gap="extra-small">
         <SectionHead
           title={`${lang === 'ko' ? '담당자' : 'Contacts'} (${n})`}
           action={
             <Button size="xs" onClick={() => setEditing(true)}>
-              {t.addContact}
+              <IconText name="add">{t.addContact}</IconText>
             </Button>
           }
         />
         {n ? (
-          <Table bordered density="condensed">
-            <TableHead>
-              <TableRow>
-                <TableHeader>{t.lName}</TableHeader>
-                <TableHeader>{t.lEmail}</TableHeader>
-                <TableHeader>{t.lJob}</TableHeader>
-                <TableHeader>{t.lFunction}</TableHeader>
-                <TableHeader>{t.lPhone}</TableHeader>
-                <TableHeader> </TableHeader>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {data.contacts.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>
-                    <Flex direction="row" gap="extra-small" align="center">
-                      <CrmActionLink
-                        actionType="PREVIEW_OBJECT"
-                        actionContext={{
-                          objectTypeId: '0-1',
-                          objectId: Number(c.id),
-                        }}
-                      >
-                        {c.name}
-                      </CrmActionLink>
-                      {newTab('0-1', c.id)}
-                    </Flex>
-                  </TableCell>
-                  <TableCell>
-                    {c.email && c.email !== c.name ? c.email : '--'}
-                  </TableCell>
-                  <TableCell>{c.jobtitle || '--'}</TableCell>
-                  <TableCell>{c.jobfunction || '--'}</TableCell>
-                  <TableCell>{c.phone || '--'}</TableCell>
-                  <TableCell align="right">
-                    <Link
-                      href={{
-                        url: objUrl(portalId, '0-1', c.id),
-                        external: false,
-                      }}
-                      preventDefault
-                      overlay={unlinkModal('contact', c.id, c.name)}
-                    >
-                      {lang === 'ko' ? '해제' : 'Unlink'}
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          // HubSpot 기본 연결 목록 (End Customer 라벨만) — 해제는 [편집]에서
+          <CrmAssociationPivot
+            key={`ec-pivot-${pivotKey}`}
+            objectTypeId="0-1"
+            associationLabels={['End Customer']}
+            maxAssociations={10}
+          />
         ) : (
           <Text variant="microcopy">ⓘ {t.noContactLinked}</Text>
         )}

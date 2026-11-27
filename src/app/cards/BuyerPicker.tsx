@@ -7,6 +7,7 @@ import {
   DescriptionListItem,
   Divider,
   Flex,
+  Icon,
   LoadingSpinner,
   Select,
   Text,
@@ -254,7 +255,7 @@ const BuyerPicker = ({ context, actions }: any) => {
               {saving ? t.saving : t.save}
             </Button>
             <Button variant="secondary" onClick={loadAll} disabled={saving}>
-              {t.refresh}
+              <Icon name="refresh" screenReaderText={t.refresh} />
             </Button>
           </Flex>
         </>

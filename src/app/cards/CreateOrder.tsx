@@ -18,7 +18,7 @@ import {
 } from '@hubspot/ui-extensions';
 import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import { PORTAL, callOD, editorUrl, getLang, objUrl, odVersion, useOD } from './OrderShared.tsx';
-import { CheckList, FooterLine, StatusRow, joinVals, toast } from './UiKit.tsx';
+import { IconText, CheckList, FooterLine, StatusRow, joinVals, toast } from './UiKit.tsx';
 
 // Create Order (주문 생성) — Opportunity 가운데 카드 (Ver.01)
 // Order Confirm 단계 + 주문 조건 충족 → Order 파이프라인(PO Registration) 거래 생성
@@ -165,7 +165,7 @@ const CreateOrder = ({ context, actions }: { context: any; actions: any }) => {
       )}
       <Flex direction="row" gap="small" align="center" wrap="wrap">
         <Button variant="primary" disabled={!data.ready} overlay={modal}>
-          {ko ? 'Order 만들기' : 'Create order'}
+          <IconText name="order">{ko ? 'Order 만들기' : 'Create order'}</IconText>
         </Button>
         <Text variant="microcopy">{joinVals(data.stage && `${ko ? '현재 단계' : 'Stage'} : ${data.stage}`, data.owner && `Owner : ${data.owner}`)}</Text>
       </Flex>

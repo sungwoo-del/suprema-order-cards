@@ -74,7 +74,7 @@ type GuideItem = {
 };
 
 // 카드 설명 옆 버전 표기 — 배포할 때 함께 올림
-const CARD_VERSION = '19';
+const CARD_VERSION = '20';
 const CARD_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 const CARD_STAGE = 'Beta';
@@ -1416,7 +1416,7 @@ const OrderSetup = ({ context, actions }: any) => {
       <Flex direction="row" justify="between" align="center" gap="small">
         <Text variant="microcopy">{t.desc}</Text>
         <Button variant="secondary" size="xs" overlay={guidePanel}>
-          {t.guideBtn}
+          <Icon name="book" size="sm" /> {t.guideBtn}
         </Button>
       </Flex>
 
@@ -1598,17 +1598,20 @@ const OrderSetup = ({ context, actions }: any) => {
 
       {/* 하단 — 새로고침 / 우측 끝 라인아이템 초기화 */}
       <Flex direction="row" justify="between" align="center">
-        <Button
-          variant="secondary"
-          size="xs"
-          disabled={!!savingGroup}
-          onClick={async () => {
-            setLoading(true);
-            await load();
-          }}
-        >
-          {t.refresh}
-        </Button>
+        <Flex direction="row" gap="small" align="center">
+          <Button
+            variant="secondary"
+            size="xs"
+            disabled={!!savingGroup}
+            onClick={async () => {
+              setLoading(true);
+              await load();
+            }}
+          >
+            <Icon name="refresh" screenReaderText={t.refresh} />
+          </Button>
+          <Text variant="microcopy">{`V.${CARD_VERSION}${CARD_STAGE ? ' ' + CARD_STAGE.charAt(0) : ''}`}</Text>
+        </Flex>
         {hasItems && (
           <Button
             variant="destructive"
