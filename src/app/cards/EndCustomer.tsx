@@ -306,6 +306,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
             actions={
               <>
                 <Button
+                  variant="transparent"
                   size="xs"
                   onClick={() => {
                     setChangeCompany(true);
@@ -315,6 +316,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
                   <IconText name="replace">{t.changeCompany}</IconText>
                 </Button>
                 <Button
+                  variant="transparent"
                   size="xs"
                   overlay={unlinkModal('company', co.id, co.name)}
                 >
@@ -359,6 +361,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
                 ]}
                 actions={
                   <Button
+                    variant="transparent"
                     size="xs"
                     overlay={unlinkModal(
                       'contact',

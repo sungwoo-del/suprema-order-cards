@@ -3,7 +3,7 @@ import { hubspot } from '@hubspot/ui-extensions';
 
 // Create Order · Order Progress 카드 공용 (docs/06_Order_프로세스.md)
 // bump.sh가 OD_VERSION / OD_UPDATED 를 올립니다.
-export const OD_VERSION = '24';
+export const OD_VERSION = '25';
 export const OD_UPDATED = '2026-11-27';
 export const OD_STAGE = 'Beta';
 export const PORTAL = 245822501;
