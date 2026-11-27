@@ -258,24 +258,26 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
         <SectionHead
           title={lang === 'ko' ? '회사' : 'Company'}
           action={
-            <Button
-              size="xs"
-              onClick={() => {
-                setChangeCompany(true);
-                setEditing(true);
-              }}
-            >
-              <Icon
-                name="add"
-                screenReaderText={
-                  co
-                    ? t.changeCompany
-                    : lang === 'ko'
-                      ? '회사 추가'
-                      : 'Add company'
-                }
-              />
-            </Button>
+            co ? undefined : (
+              <Button
+                size="xs"
+                onClick={() => {
+                  setChangeCompany(true);
+                  setEditing(true);
+                }}
+              >
+                <Icon
+                  name="add"
+                  screenReaderText={
+                    co
+                      ? t.changeCompany
+                      : lang === 'ko'
+                        ? '회사 추가'
+                        : 'Add company'
+                  }
+                />
+              </Button>
+            )
           }
         />
         {co ? (

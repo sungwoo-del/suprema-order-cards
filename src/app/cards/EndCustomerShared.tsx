@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  Tag,
+  Image,
   Box,
   Button,
   Checkbox,
@@ -32,7 +34,7 @@ import { CrmActionButton } from '@hubspot/ui-extensions/crm';
 // End Customer(최종 고객사) 카드 공용 — 가운데 컬럼 카드 · 오른쪽 사이드바 카드가 함께 씀
 // 규칙 : 회사 1개 · 담당자 여러 명 · 둘 다 "End Customer" 연결 라벨
 // deploy.sh가 배포할 때 EC_VERSION / EC_UPDATED 를 자동으로 올립니다.
-export const EC_VERSION = '26';
+export const EC_VERSION = '27';
 export const EC_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const EC_STAGE = 'Beta';
@@ -717,127 +719,109 @@ export const Editor = ({
       <SectionHead
         title={t.stepCompany}
         action={
-          company && !searchOpen ? (
-            [
-              <Link
-                key="c"
-                href={{
-                  url: objUrl(PORTAL, '0-2', company.id),
-                  external: false,
-                }}
-                preventDefault
-                onClick={() => {
-                  setResults(null);
-                  setSearchOpen(true);
-                  setListOpen(true);
-                }}
-              >
-                {t.change}
-              </Link>,
-              <Link
-                key="u"
-                href={{
-                  url: objUrl(PORTAL, '0-2', company.id),
-                  external: false,
-                }}
-                preventDefault
-                onClick={() => {
-                  setCompany(null);
-                  setChecked([]);
-                  setSearchOpen(true);
-                  setListOpen(false);
-                  setQuery('');
-                }}
-              >
-                {t.unlink}
-              </Link>,
-            ]
-          ) : !company && data.company && searchOpen ? (
-            [
-              <Link
-                key="n"
-                href={{ url: objUrl(PORTAL, '0-2', dealId), external: false }}
-                preventDefault
-                onClick={() => {
-                  setMode('company');
-                  setForm({ name: query });
-                  setListOpen(false);
-                }}
-              >
-                <IconText name="add">{t.newCompany}</IconText>
-              </Link>,
-              <Link
-                key="x"
-                href={{
-                  url: objUrl(PORTAL, '0-2', data.company.id),
-                  external: false,
-                }}
-                preventDefault
-                onClick={() => {
-                  setCompany(data.company);
-                  setChecked(data.contacts.map((c) => c.id));
-                  setSearchOpen(false);
-                  setListOpen(false);
-                }}
-              >
-                {ko ? '해제 취소' : 'Undo'}
-              </Link>,
-            ]
-          ) : company && searchOpen ? (
-            [
-              <Link
-                key="n"
-                href={{ url: objUrl(PORTAL, '0-2', dealId), external: false }}
-                preventDefault
-                onClick={() => {
-                  setMode('company');
-                  setForm({ name: query });
-                  setListOpen(false);
-                }}
-              >
-                <IconText name="add">{t.newCompany}</IconText>
-              </Link>,
-              <Link
-                key="x"
-                href={{
-                  url: objUrl(PORTAL, '0-2', company.id),
-                  external: false,
-                }}
-                preventDefault
-                onClick={() => {
-                  setSearchOpen(false);
-                  setListOpen(false);
-                  setQuery('');
-                }}
-              >
-                {t.cancel}
-              </Link>,
-            ]
-          ) : searchOpen && mode !== 'company' ? (
-            <Link
-              href={{ url: objUrl(PORTAL, '0-2', dealId), external: false }}
-              preventDefault
-              onClick={() => {
-                setMode('company');
-                setForm({ name: query });
-                setListOpen(false);
-              }}
-            >
-              <IconText name="add">{t.newCompany}</IconText>
-            </Link>
-          ) : undefined
+          searchOpen && mode !== 'company'
+            ? [
+                <Button
+                  key="n"
+                  size="xs"
+                  onClick={() => {
+                    setMode('company');
+                    setForm({ name: query });
+                    setListOpen(false);
+                  }}
+                >
+                  <IconText name="add">{t.newCompany}</IconText>
+                </Button>,
+                ...(data.company && !company
+                  ? [
+                      <Button
+                        key="x"
+                        size="xs"
+                        onClick={() => {
+                          setCompany(data.company);
+                          setChecked(data.contacts.map((c) => c.id));
+                          setSearchOpen(false);
+                          setListOpen(false);
+                        }}
+                      >
+                        {ko ? '해제 취소' : 'Undo'}
+                      </Button>,
+                    ]
+                  : company
+                    ? [
+                        <Button
+                          key="x"
+                          size="xs"
+                          onClick={() => {
+                            setSearchOpen(false);
+                            setListOpen(false);
+                            setQuery('');
+                          }}
+                        >
+                          {t.cancel}
+                        </Button>,
+                      ]
+                    : []),
+              ]
+            : undefined
         }
       />
       {company && !searchOpen ? (
         <Tile compact>
-          <Flex direction="row" gap="small" align="center" wrap="wrap">
-            <Text format={{ fontWeight: 'demibold' }}>{company.name}</Text>
-            <Text variant="microcopy">
-              {joinVals(company.country, company.lifecycle, company.domain)}
-            </Text>
-            {changedCompany ? (
-              <StatusTag variant="warning">{t.pending}</StatusTag>
-            ) : null}
+          <Flex direction="row" gap="small" align="center">
+            <Box flex="none">
+              {company.logo ? (
+                <Image
+                  src={company.logo}
+                  alt={company.name}
+                  width={28}
+                  height={28}
+                />
+              ) : (
+                <Tag variant="default">
+                  {String(company.name || '?')
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </Tag>
+              )}
+            </Box>
+            <Box flex={1}>
+              <Flex direction="row" gap="small" align="center" wrap="wrap">
+                <Text format={{ fontWeight: 'demibold' }}>{company.name}</Text>
+                <Text variant="microcopy">
+                  {joinVals(company.country, company.lifecycle, company.domain)}
+                </Text>
+                {changedCompany ? (
+                  <StatusTag variant="warning">{t.pending}</StatusTag>
+                ) : null}
+              </Flex>
+            </Box>
+            <Box flex="none">
+              <Flex direction="row" gap="extra-small">
+                <Button
+                  size="xs"
+                  onClick={() => {
+                    setResults(null);
+                    setSearchOpen(true);
+                    setListOpen(true);
+                  }}
+                >
+                  <IconText name="replace">{t.change}</IconText>
+                </Button>
+                <Button
+                  size="xs"
+                  onClick={() => {
+                    setCompany(null);
+                    setChecked([]);
+                    setSearchOpen(true);
+                    setListOpen(false);
+                    setQuery('');
+                  }}
+                >
+                  <IconText name="remove">{t.unlink}</IconText>
+                </Button>
+              </Flex>
+            </Box>
           </Flex>
         </Tile>
       ) : (
@@ -882,16 +866,15 @@ export const Editor = ({
         title={t.stepContacts}
         action={
           company && list !== null && mode !== 'contact' ? (
-            <Link
-              href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }}
-              preventDefault
+            <Button
+              size="xs"
               onClick={() => {
                 setMode('contact');
                 setForm({});
               }}
             >
               <IconText name="add">{t.newContact}</IconText>
-            </Link>
+            </Button>
           ) : undefined
         }
       />
