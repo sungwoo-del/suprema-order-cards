@@ -3,7 +3,7 @@ import { hubspot } from '@hubspot/ui-extensions';
 
 // Lead → Opportunity 전환 카드 공용 (가운데 컬럼 · 사이드바)
 // deploy.sh가 배포할 때 CV_VERSION / CV_UPDATED 를 자동으로 올립니다.
-export const CV_VERSION = '11';
+export const CV_VERSION = '12';
 export const CV_UPDATED = '2026-11-27';
 export const CV_STAGE = 'Beta';
 export const PORTAL = 245822501;

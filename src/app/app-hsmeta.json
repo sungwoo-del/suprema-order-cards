@@ -3,7 +3,7 @@
   "type": "app",
   "config": {
     "description": "Suprema deal order setup cards (buyer, order type, price book, order route)",
-    "name": "Suprema Order - HelloDigital",
+    "name": "Suprema(2026-11-27 / Ver.18 Beta) - HelloDigital",
     "distribution": "private",
     "auth": {
       "type": "static",

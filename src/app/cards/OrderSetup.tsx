@@ -74,7 +74,7 @@ type GuideItem = {
 };
 
 // 카드 설명 옆 버전 표기 — 배포할 때 함께 올림
-const CARD_VERSION = '17';
+const CARD_VERSION = '18';
 const CARD_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 const CARD_STAGE = 'Beta';
@@ -162,7 +162,7 @@ const MSG = {
       'Changing Order Branch clears the unsaved buyer changes. Save or cancel the Buyer group first.',
     autoSaveNote: 'Saved automatically after you enter the information.',
     title: 'Order Setup',
-    desc: `Set the buyer, order type, price book and order route for this deal. (Update : ${CARD_UPDATED} / Ver.${CARD_VERSION}${CARD_STAGE ? ' ' + CARD_STAGE : ''})`,
+    desc: `Set the buyer, order type, price book and order route for this deal.`,
     guideBtn: 'Order Guide',
     loading: 'Loading order setup...',
     error: 'Error',
@@ -288,7 +288,7 @@ const MSG = {
       'Order Branch를 저장하면 구매자 그룹의 변경 내용이 사라집니다. 먼저 저장하거나 취소하세요.',
     autoSaveNote: '정보 입력 후 자동 저장됩니다.',
     title: '주문 설정',
-    desc: `이 거래의 구매자 · 주문 형태 · 가격표 · 주문 경로를 설정합니다. (Update : ${CARD_UPDATED} / Ver.${CARD_VERSION}${CARD_STAGE ? ' ' + CARD_STAGE : ''})`,
+    desc: `이 거래의 구매자 · 주문 형태 · 가격표 · 주문 경로를 설정합니다.`,
     guideBtn: '주문 가이드 보기',
     loading: '주문 설정을 불러오는 중입니다...',
     error: '오류',
