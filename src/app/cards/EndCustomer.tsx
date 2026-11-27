@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Alert,
+  AutoGrid,
   Box,
   Button,
   Flex,
@@ -22,7 +23,7 @@ import {
   Tile,
   hubspot,
 } from '@hubspot/ui-extensions';
-import { CrmActionLink, CrmAssociationPivot } from '@hubspot/ui-extensions/crm';
+
 import {
   Editor,
   PORTAL,
@@ -49,6 +50,16 @@ hubspot.extend<'crm.record.tab'>(({ context, actions }) => (
   <EndCustomer context={context} actions={actions} />
 ));
 
+// 이름 머리글자 (로고 · 사진이 없을 때)
+const initials = (v?: string) => {
+  const w = String(v || '?')
+    .replace(/[^\p{L}\p{N} ]/gu, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  return ((w[0]?.[0] || '?') + (w[1]?.[0] || w[0]?.[1] || '')).toUpperCase();
+};
+
 const UNLINK_MODAL = 'ec-unlink-modal';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,7 +73,6 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
   const [changeCompany, setChangeCompany] = useState(false);
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
-  const [pivotKey, setPivotKey] = useState(0);
 
   const footer = (
     <FooterLine
@@ -70,7 +80,6 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
       refreshLabel={t.refresh}
       onRefresh={() => {
         load();
-        setPivotKey((k) => k + 1);
       }}
       href={objUrl(portalId, '0-3', dealId)}
     />
@@ -111,7 +120,6 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
           data={data}
           onSaved={(d) => {
             setData(d);
-            setPivotKey((k) => k + 1);
             setEditing(false);
             setChangeCompany(false);
             notify();
@@ -141,7 +149,6 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
     setErr('');
     try {
       setData(await callEC({ action: 'unlink', dealId, lang, kind, id }));
-      setPivotKey((k) => k + 1);
       notify();
       toast(
         actions,
@@ -180,11 +187,6 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
       </ModalFooter>
     </Modal>
   );
-  const newTab = (type: string, id: string) => (
-    <Link href={{ url: objUrl(portalId, type, id), external: true }}>
-      {t.newTab}
-    </Link>
-  );
 
   return (
     <Flex direction="column" gap="medium">
@@ -211,23 +213,21 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
                 {co.logo ? (
                   <Image src={co.logo} alt={co.name} width={40} height={40} />
                 ) : (
-                  <Tag variant="default">{(co.name || '?').slice(0, 2).toUpperCase()}</Tag>
+                  <Tag variant="default">
+                    {(co.name || '?').slice(0, 2).toUpperCase()}
+                  </Tag>
                 )}
               </Box>
               <Box flex={1}>
                 <Flex direction="column" gap="extra-small">
-                  <Flex direction="row" gap="small" align="center">
-                    <CrmActionLink
-                      actionType="PREVIEW_OBJECT"
-                      actionContext={{
-                        objectTypeId: '0-2',
-                        objectId: Number(co.id),
-                      }}
-                    >
-                      {co.name}
-                    </CrmActionLink>
-                    {newTab('0-2', co.id)}
-                  </Flex>
+                  <Link
+                    href={{
+                      url: objUrl(portalId, '0-2', co.id),
+                      external: true,
+                    }}
+                  >
+                    {co.name}
+                  </Link>
                   <Text variant="microcopy">
                     {joinVals(co.country, co.industry, co.lifecycle, co.team)}
                   </Text>
@@ -264,7 +264,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
         )}
       </Flex>
 
-      {/* 담당자 — HubSpot 기본 연결 목록 */}
+      {/* 담당자 — 회사와 같은 테두리 칸 · 이름 클릭 시 새 탭으로 레코드 */}
       <Flex direction="column" gap="extra-small">
         <SectionHead
           title={`${lang === 'ko' ? '담당자' : 'Contacts'} (${n})`}
@@ -276,14 +276,39 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
         />
         {n ? (
           // HubSpot 기본 연결 목록 (End Customer 라벨만) — 해제는 [편집]에서
-          <Tile compact>
-            <CrmAssociationPivot
-              key={`ec-pivot-${pivotKey}`}
-              objectTypeId="0-1"
-              associationLabels={['End Customer']}
-              maxAssociations={10}
-            />
-          </Tile>
+          // 담당자별 테두리 칸 · 최대 3열 (카드 폭에 따라 1~3열 자동)
+          <AutoGrid columnWidth={280} flexible gap="small">
+            {data.contacts.map((c) => (
+              <Tile key={c.id} compact>
+                <Flex direction="row" align="start" gap="small">
+                  <Box flex="none">
+                    <Tag variant="default">{initials(c.name || c.email)}</Tag>
+                  </Box>
+                  <Box flex={1}>
+                    <Flex direction="column" gap="extra-small">
+                      <Link
+                        href={{
+                          url: objUrl(portalId, '0-1', c.id),
+                          external: true,
+                        }}
+                      >
+                        {c.name || t.noName}
+                      </Link>
+                      {c.jobtitle || c.jobfunction ? (
+                        <Text variant="microcopy">
+                          {joinVals(c.jobtitle, c.jobfunction)}
+                        </Text>
+                      ) : null}
+                      <Text variant="microcopy">{c.email || '--'}</Text>
+                      {c.phone ? (
+                        <Text variant="microcopy">{c.phone}</Text>
+                      ) : null}
+                    </Flex>
+                  </Box>
+                </Flex>
+              </Tile>
+            ))}
+          </AutoGrid>
         ) : (
           <Text variant="microcopy">ⓘ {t.noContactLinked}</Text>
         )}
