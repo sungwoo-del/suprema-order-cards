@@ -111,7 +111,7 @@ function companyView(c, maps, owner) {
 const realName = (s) => (s && /[^*\s]/.test(String(s)) ? String(s).trim() : '');
 function contactView(c, maps) {
   return {
-    id: c.id, name: [realName(c.firstname), realName(c.lastname)].filter(Boolean).join(' ') || c.email || `#${c.id}`, email: c.email || '',
+    id: c.id, name: [realName(c.firstname), realName(c.lastname)].filter(Boolean).join(' '), email: c.email || '',
     jobtitle: c.jobtitle || '', jobfunction: c.job_function || '', phone: c.phone || c.mobilephone || '',
   };
 }
@@ -242,7 +242,7 @@ async function createContact(p, lang) {
   if (hit) {
     // 이미 있는 담당자 → 선택한 회사와 연결만 추가
     if (p.companyId) await api(`/crm/v4/objects/contacts/${hit.id}/associations/default/companies/${p.companyId}`, { method: 'PUT' });
-    return { ok: true, duplicate: true, contact: { id: String(hit.id), name: [hit.properties.firstname, hit.properties.lastname].filter(Boolean).join(' ') || email, email } };
+    return { ok: true, duplicate: true, contact: { id: String(hit.id), name: [hit.properties.firstname, hit.properties.lastname].filter(Boolean).join(' '), email } };
   }
   const props = { firstname: String(v.firstname).trim(), email };
   if (v.lastname) props.lastname = String(v.lastname).trim();

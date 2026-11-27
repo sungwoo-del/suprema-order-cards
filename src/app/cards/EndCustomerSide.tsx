@@ -112,9 +112,9 @@ const EndCustomerSide = ({ context, actions }: { context: any; actions: any }) =
         data.contacts.map((c) => (
           <Flex key={c.id} direction="column" gap="flush">
             <CrmActionLink actionType="PREVIEW_OBJECT" actionContext={{ objectTypeId: '0-1', objectId: Number(c.id) }}>
-              {c.name}
+              {c.name || t.noName}
             </CrmActionLink>
-            <Text variant="microcopy">{joinVals(c.jobtitle || c.jobfunction, c.email !== c.name ? c.email : '')}</Text>
+            <Text variant="microcopy">{joinVals(c.jobtitle || c.jobfunction, c.email)}</Text>
           </Flex>
         ))
       ) : (
