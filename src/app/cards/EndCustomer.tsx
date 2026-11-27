@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   AutoGrid,
@@ -35,6 +35,7 @@ import {
   useEC,
   webUrl,
 } from './EndCustomerShared.tsx';
+import { CrmActionLink } from '@hubspot/ui-extensions/crm';
 import {
   FooterLine,
   SectionHead,
@@ -59,6 +60,63 @@ const initials = (v?: string) => {
     .filter(Boolean);
   return ((w[0]?.[0] || '?') + (w[1]?.[0] || w[0]?.[1] || '')).toUpperCase();
 };
+
+// 회사 · 담당자 공통 칸 : 왼쪽 이미지 · 이름(클릭 = 미리보기 패널) · 옆 아이콘(새 탭 CRM) · 정보 줄 · 아래 동작 버튼
+const RecordTile = ({
+  typeId,
+  id,
+  name,
+  portalId,
+  avatar,
+  lines,
+  extra,
+  actions,
+}: {
+  typeId: string;
+  id: string;
+  name: string;
+  portalId: number | string;
+  avatar: React.ReactNode;
+  lines: string[];
+  extra?: React.ReactNode;
+  actions?: React.ReactNode;
+}) => (
+  <Tile compact>
+    <Flex direction="column" gap="small">
+      <Flex direction="row" align="start" gap="small">
+        <Box flex="none">{avatar}</Box>
+        <Box flex={1}>
+          <Flex direction="column" gap="extra-small">
+            <Flex direction="row" gap="extra-small" align="center">
+              <CrmActionLink
+                actionType="PREVIEW_OBJECT"
+                actionContext={{ objectTypeId: typeId, objectId: Number(id) }}
+              >
+                {name}
+              </CrmActionLink>
+              <Link
+                href={{ url: objUrl(portalId, typeId, id), external: true }}
+              >
+                {'\u00a0'}
+              </Link>
+            </Flex>
+            {lines.map((l, i) => (
+              <Text key={i} variant="microcopy">
+                {l}
+              </Text>
+            ))}
+            {extra}
+          </Flex>
+        </Box>
+      </Flex>
+      {actions ? (
+        <Flex direction="row" justify="end" gap="extra-small">
+          {actions}
+        </Flex>
+      ) : null}
+    </Flex>
+  </Tile>
+);
 
 const UNLINK_MODAL = 'ec-unlink-modal';
 
@@ -206,59 +264,48 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
       <Flex direction="column" gap="extra-small">
         <SectionHead title={lang === 'ko' ? '회사' : 'Company'} />
         {co ? (
-          <Tile compact>
-            <Flex direction="row" align="start" gap="small">
-              {/* 회사 로고 (HubSpot 회사 로고 · 없으면 머리글자) */}
-              <Box flex="none">
-                {co.logo ? (
-                  <Image src={co.logo} alt={co.name} width={40} height={40} />
-                ) : (
-                  <Tag variant="default">
-                    {(co.name || '?').slice(0, 2).toUpperCase()}
-                  </Tag>
-                )}
-              </Box>
-              <Box flex={1}>
-                <Flex direction="column" gap="extra-small">
-                  <Link
-                    href={{
-                      url: objUrl(portalId, '0-2', co.id),
-                      external: true,
-                    }}
-                  >
-                    {co.name}
-                  </Link>
-                  <Text variant="microcopy">
-                    {joinVals(co.country, co.industry, co.lifecycle, co.team)}
-                  </Text>
-                  {co.website ? (
-                    <Link href={{ url: webUrl(co.website), external: true }}>
-                      {co.website}
-                    </Link>
-                  ) : null}
-                </Flex>
-              </Box>
-              <Box flex="none">
-                <Flex direction="row" gap="extra-small" align="center">
-                  <Button
-                    size="xs"
-                    onClick={() => {
-                      setChangeCompany(true);
-                      setEditing(true);
-                    }}
-                  >
-                    <IconText name="replace">{t.changeCompany}</IconText>
-                  </Button>
-                  <Button
-                    size="xs"
-                    overlay={unlinkModal('company', co.id, co.name)}
-                  >
-                    <IconText name="remove">{t.unlink}</IconText>
-                  </Button>
-                </Flex>
-              </Box>
-            </Flex>
-          </Tile>
+          <RecordTile
+            typeId="0-2"
+            id={co.id}
+            name={co.name}
+            portalId={portalId}
+            avatar={
+              co.logo ? (
+                <Image src={co.logo} alt={co.name} width={40} height={40} />
+              ) : (
+                <Tag variant="default">{initials(co.name)}</Tag>
+              )
+            }
+            lines={[
+              joinVals(co.country, co.industry, co.lifecycle, co.team) || '--',
+            ]}
+            extra={
+              co.website ? (
+                <Link href={{ url: webUrl(co.website), external: true }}>
+                  {co.website}
+                </Link>
+              ) : null
+            }
+            actions={
+              <>
+                <Button
+                  size="xs"
+                  onClick={() => {
+                    setChangeCompany(true);
+                    setEditing(true);
+                  }}
+                >
+                  <IconText name="replace">{t.changeCompany}</IconText>
+                </Button>
+                <Button
+                  size="xs"
+                  overlay={unlinkModal('company', co.id, co.name)}
+                >
+                  <IconText name="remove">{t.unlink}</IconText>
+                </Button>
+              </>
+            }
+          />
         ) : (
           <Text variant="microcopy">ⓘ {t.noCompanyLinked}</Text>
         )}
@@ -279,30 +326,33 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
           // 담당자별 테두리 칸 · 최대 3열 (카드 폭에 따라 1~3열 자동)
           <AutoGrid columnWidth={280} flexible gap="small">
             {data.contacts.map((c) => (
-              <Tile key={c.id} compact>
-                <Flex direction="row" align="start" gap="small">
-                  <Box flex="none">
-                    <Tag variant="default">{initials(c.name || c.email)}</Tag>
-                  </Box>
-                  <Box flex={1}>
-                    <Flex direction="column" gap="extra-small">
-                      <Link
-                        href={{
-                          url: objUrl(portalId, '0-1', c.id),
-                          external: true,
-                        }}
-                      >
-                        {c.name || t.noName}
-                      </Link>
-                      <Text variant="microcopy">
-                        {`${lang === 'ko' ? '직급' : 'Title'} : ${c.jobtitle || '--'} · ${lang === 'ko' ? '직무' : 'Function'} : ${c.jobfunction || '--'}`}
-                      </Text>
-                      <Text variant="microcopy">{`${lang === 'ko' ? '전화' : 'Phone'} : ${c.phone || '--'}`}</Text>
-                      <Text variant="microcopy">{`${lang === 'ko' ? '이메일' : 'Email'} : ${c.email || '--'}`}</Text>
-                    </Flex>
-                  </Box>
-                </Flex>
-              </Tile>
+              <RecordTile
+                key={c.id}
+                typeId="0-1"
+                id={c.id}
+                name={c.name || t.noName}
+                portalId={portalId}
+                avatar={
+                  <Tag variant="default">{initials(c.name || c.email)}</Tag>
+                }
+                lines={[
+                  `${lang === 'ko' ? '직급' : 'Title'} : ${c.jobtitle || '--'} · ${lang === 'ko' ? '직무' : 'Function'} : ${c.jobfunction || '--'}`,
+                  `${lang === 'ko' ? '전화' : 'Phone'} : ${c.phone || '--'}`,
+                  `${lang === 'ko' ? '이메일' : 'Email'} : ${c.email || '--'}`,
+                ]}
+                actions={
+                  <Button
+                    size="xs"
+                    overlay={unlinkModal(
+                      'contact',
+                      c.id,
+                      c.name || c.email || t.noName,
+                    )}
+                  >
+                    <IconText name="remove">{t.unlink}</IconText>
+                  </Button>
+                }
+              />
             ))}
           </AutoGrid>
         ) : (
