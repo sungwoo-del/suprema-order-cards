@@ -32,7 +32,7 @@ import { CrmActionButton } from '@hubspot/ui-extensions/crm';
 // End Customer(최종 고객사) 카드 공용 — 가운데 컬럼 카드 · 오른쪽 사이드바 카드가 함께 씀
 // 규칙 : 회사 1개 · 담당자 여러 명 · 둘 다 "End Customer" 연결 라벨
 // deploy.sh가 배포할 때 EC_VERSION / EC_UPDATED 를 자동으로 올립니다.
-export const EC_VERSION = '08';
+export const EC_VERSION = '09';
 export const EC_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const EC_STAGE = 'Beta';
@@ -540,8 +540,17 @@ export const Editor = ({
         title={t.stepCompany}
         action={
           company && !searchOpen ? (
-            <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setResults(null); setSearchOpen(true); setListOpen(true); }}>
-              {t.change}
+            <Flex direction="row" gap="small" align="center">
+              <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setResults(null); setSearchOpen(true); setListOpen(true); }}>
+                {t.change}
+              </Link>
+              <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setCompany(null); setChecked([]); setSearchOpen(true); setListOpen(false); setQuery(''); }}>
+                {t.unlink}
+              </Link>
+            </Flex>
+          ) : !company && data.company && searchOpen ? (
+            <Link href={{ url: objUrl(PORTAL, '0-2', data.company.id), external: false }} preventDefault onClick={() => { setCompany(data.company); setChecked(data.contacts.map((c) => c.id)); setSearchOpen(false); setListOpen(false); }}>
+              {ko ? '해제 취소' : 'Undo'}
             </Link>
           ) : company && searchOpen ? (
             <Link href={{ url: objUrl(PORTAL, '0-2', company.id), external: false }} preventDefault onClick={() => { setSearchOpen(false); setListOpen(false); setQuery(''); }}>
@@ -572,6 +581,13 @@ export const Editor = ({
           {listOpen ? resultTable : null}
         </Flex>
       )}
+      {!company && data.company ? (
+        <Alert title={ko ? '연결 해제 예정' : 'Will be unlinked'} variant="warning">
+          {ko
+            ? `저장하면 ${data.company.name}과(와) 담당자 ${data.contacts.length}명의 End Customer 연결이 해제됩니다. 레코드는 삭제되지 않습니다. 다른 회사를 고르려면 위에서 검색하세요.`
+            : `Saving removes the End Customer link for ${data.company.name} and ${data.contacts.length} contact(s). Records are not deleted. To pick another company, search above.`}
+        </Alert>
+      ) : null}
       {mode === 'company' ? companyForm : null}
 
       {/* ② 담당자 */}
@@ -637,7 +653,7 @@ export const Editor = ({
       <Divider />
       <Flex direction="row" gap="small" align="center" wrap="wrap">
         <LoadingButton variant="primary" loading={busy && mode === ''} disabled={!dirty || mode !== ''} onClick={save}>
-          {t.saveN(company ? 1 : 0, checked.length)}
+          {!company && data.company && !checked.length ? (ko ? '연결 해제 저장' : 'Save unlink') : t.saveN(company ? 1 : 0, checked.length)}
         </LoadingButton>
         {onCancel ? <Button onClick={onCancel}>{t.cancel}</Button> : null}
         <Text variant="microcopy">{dirty ? t.saveHint : ko ? '변경 사항이 없습니다.' : 'There are no changes.'}</Text>

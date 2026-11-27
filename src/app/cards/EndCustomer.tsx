@@ -2,7 +2,6 @@ import { useState } from 'react';
 import {
   Alert,
   Button,
-  Dropdown,
   Flex,
   Link,
   LoadingSpinner,
@@ -153,17 +152,17 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
                 <Link href={{ url: webUrl(co.website), external: true }}>{co.website}</Link>
               ) : null}
             </Flex>
-            <Dropdown buttonText={t.more} buttonSize="xs" variant="secondary">
-              <Dropdown.ButtonItem onClick={() => { setChangeCompany(true); setEditing(true); }}>{t.changeCompany}</Dropdown.ButtonItem>
-              <Dropdown.ButtonItem overlay={unlinkModal('company', co.id, co.name)}>{t.unlink}</Dropdown.ButtonItem>
-            </Dropdown>
+            <Flex direction="row" gap="extra-small" align="center">
+              <Button size="xs" onClick={() => { setChangeCompany(true); setEditing(true); }}>{t.changeCompany}</Button>
+              <Button size="xs" overlay={unlinkModal('company', co.id, co.name)}>{t.unlink}</Button>
+            </Flex>
           </Flex>
         </Tile>
       ) : (
         <Text variant="microcopy">ⓘ {t.noCompanyLinked}</Text>
       )}
 
-      {/* 담당자 — 표 (행 동작은 오른쪽 ⋯) */}
+      {/* 담당자 — 표 (행 동작 : 오른쪽 [연결 해제]) */}
       <SectionHead
         title={`${lang === 'ko' ? '담당자' : 'Contacts'} (${n})`}
         action={<Button size="xs" onClick={() => setEditing(true)}>{t.addContact}</Button>}
@@ -196,9 +195,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
                 <TableCell>{c.jobfunction || '--'}</TableCell>
                 <TableCell>{c.phone || '--'}</TableCell>
                 <TableCell align="right">
-                  <Dropdown buttonText="⋯" buttonSize="xs" variant="secondary">
-                    <Dropdown.ButtonItem overlay={unlinkModal('contact', c.id, c.name)}>{t.unlink}</Dropdown.ButtonItem>
-                  </Dropdown>
+                  <Button size="xs" overlay={unlinkModal('contact', c.id, c.name)}>{t.unlink}</Button>
                 </TableCell>
               </TableRow>
             ))}
