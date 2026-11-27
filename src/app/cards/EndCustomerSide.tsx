@@ -3,6 +3,7 @@ import {
   Button,
   Divider,
   Flex,
+  Icon,
   LoadingSpinner,
   Panel,
   PanelBody,
@@ -86,7 +87,7 @@ const EndCustomerSide = ({ context, actions }: { context: any; actions: any }) =
       <StatusRow
         label={t.linked}
         variant="success"
-        action={<Button size="xs" overlay={panel}><IconText name="edit">{t.edit}</IconText></Button>}
+        action={<Button size="xs" overlay={panel}><Icon name="edit" screenReaderText={t.edit} /></Button>}
       />
       {data.extraCompanies.length ? (
         <Alert title={lang === 'ko' ? '확인 필요' : 'Check'} variant="warning">

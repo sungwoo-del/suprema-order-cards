@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Flex,
+  Icon,
   Link,
   LoadingSpinner,
   Modal,
@@ -91,7 +92,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
       action={
         !empty && !editing ? (
           <Button size="xs" onClick={() => setEditing(true)}>
-            <IconText name="edit">{t.edit}</IconText>
+            <Icon name="edit" screenReaderText={t.edit} />
           </Button>
         ) : undefined
       }
@@ -259,7 +260,7 @@ const EndCustomer = ({ context, actions }: { context: any; actions: any }) => {
           title={`${lang === 'ko' ? '담당자' : 'Contacts'} (${n})`}
           action={
             <Button size="xs" onClick={() => setEditing(true)}>
-              <IconText name="add">{t.addContact}</IconText>
+              <Icon name="add" screenReaderText={t.addContact} />
             </Button>
           }
         />

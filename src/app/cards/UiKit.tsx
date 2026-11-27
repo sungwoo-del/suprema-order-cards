@@ -74,7 +74,6 @@ export const FooterLine = ({
   href: string;
 }) => (
   <>
-    <Divider />
     {/* 앱 버전은 HubSpot 하단 '…에 의해 구동됨' 앱 이름에 표기 (bump.sh) */}
     <Flex direction="row" justify="end" align="center" gap="small">
       <RefreshLink label={refreshLabel} href={href} onRefresh={onRefresh} />
