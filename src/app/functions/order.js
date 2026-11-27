@@ -28,7 +28,7 @@ const COPY_PROPS = ['hubspot_owner_id', 'amount', 'deal_currency_code', 'closeda
 const ASSOC_TYPES = ['companies', 'contacts', PARTNER, PARTNER_COMPANY];
 const ACTIVITY_TYPES = ['notes', 'emails', 'calls', 'meetings', 'tasks', 'communications', 'postal_mail'];
 const LINE_PROPS = ['name', 'hs_product_id', 'quantity', 'price', 'hs_discount_percentage', 'discount', 'hs_sku', 'description',
-  'hs_line_item_currency_code', 'remark', 'pricebook_price_discount', 'hs_position_on_quote'];
+  'hs_line_item_currency_code', 'remark', 'pricebook_price_discount', 'hs_position_on_quote', 'sf_hscode', 'sf_hs_code', 'sf_country_of_origin'];
 const M = (lang, en, ko) => (lang === 'ko' ? ko : en);
 
 async function api(path, { method = 'GET', body } = {}) {
@@ -352,6 +352,7 @@ async function pi(p, lang) {
 
 // ---------- PI = HubSpot 견적(CPQ Quote) + PI 템플릿 ----------
 const KEY_PI_TEMPLATE = 'pi_quote_template';
+const DEFAULT_PI_TEMPLATE = '920511988410'; // 견적 템플릿 'Suprema PI (Proforma Invoice)'
 const QUOTE_PROPS = ['hs_title', 'hs_status', 'hs_expiration_date', 'hs_quote_link', 'hs_pdf_download_link', 'hs_createdate', 'hs_quote_amount', 'hs_currency'];
 const QUOTE_STATUS = {
   DRAFT: ['Draft', '초안', 'default'], PENDING_APPROVAL: ['Pending approval', '승인 대기', 'warning'], APPROVAL_NOT_NEEDED: ['Published', '게시됨', 'info'],
@@ -397,7 +398,7 @@ async function createPiQuote(p, lang) {
   const contacts = (await assocAll('deals', p.dealId, 'contacts')).map((r) => r.id);
   if (!contacts.length) throw new Error(M(lang, 'There is no buyer contact. Action required: associate a contact with the order.', '구매 담당자가 없습니다. 필요한 조치 : 주문에 담당자를 연결하세요.'));
   const companies = (await assocAll('deals', p.dealId, 'companies')).map((r) => r.id);
-  const templateId = String(await readJson(KEY_PI_TEMPLATE, '') || '');
+  const templateId = String(await readJson(KEY_PI_TEMPLATE, '') || DEFAULT_PI_TEMPLATE);
   const full = await api(`/crm/v3/objects/deals/${p.dealId}?properties=dealname`);
   const exp = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10); // Validity : 발행일로부터 1개월
   const properties = { hs_title: `PI - ${(full.properties || {}).dealname || p.dealId}`, hs_expiration_date: exp, hs_template_type: 'CPQ_QUOTE', hs_language: 'en' };
@@ -445,7 +446,7 @@ exports.main = async (context) => {
       case 'pi_template_get': {
         let templates = []; let error = '';
         try { templates = await quoteTemplates(); } catch (e) { error = scopeError(e) ? noScopeMsg(lang) : e.message; }
-        return { ok: true, templates, selected: String(await readJson(KEY_PI_TEMPLATE, '') || ''), error };
+        return { ok: true, templates, selected: String(await readJson(KEY_PI_TEMPLATE, '') || DEFAULT_PI_TEMPLATE), error };
       }
       case 'pi_template_save': { await writeJson(KEY_PI_TEMPLATE, String(p.templateId || '')); return { ok: true, selected: String(p.templateId || '') }; }
       default: break;
