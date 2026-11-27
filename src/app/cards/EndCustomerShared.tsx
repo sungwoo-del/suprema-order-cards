@@ -23,7 +23,7 @@ import { CrmActionButton } from '@hubspot/ui-extensions/crm';
 // End Customer(최종 고객사) 카드 공용 — 가운데 컬럼 카드 · 오른쪽 사이드바 카드가 함께 씀
 // 규칙 : 회사 1개 · 담당자 여러 명 · 둘 다 "End Customer" 연결 라벨
 // deploy.sh가 배포할 때 EC_VERSION / EC_UPDATED 를 자동으로 올립니다.
-export const EC_VERSION = '02';
+export const EC_VERSION = '03';
 export const EC_UPDATED = '2026-11-27';
 // 정식 오픈 전까지 Beta 표기 — 정식 버전이 되면 '' 로 바꾸면 표기가 사라짐
 export const EC_STAGE = 'Beta';
@@ -514,7 +514,7 @@ export const Editor = ({
               name={`ec_${c.id}`}
               checked={checked.includes(c.id)}
               onChange={(on: boolean) => toggle(c.id, on)}
-              description={[c.jobtitle || c.jobfunction, c.email, listIds.has(c.id) ? '' : t.otherLinked].filter(Boolean).join(' · ')}
+              description={[c.jobtitle || c.jobfunction, c.email !== c.name ? c.email : '', listIds.has(c.id) ? '' : t.otherLinked].filter(Boolean).join(' · ')}
             >
               {c.name}
             </Checkbox>
@@ -567,7 +567,7 @@ export const CompanySummary = ({ lang, c, compact }: { lang: Lang; c: Company; c
 };
 
 export const ContactLine = (c: Contact) =>
-  [c.jobtitle || c.jobfunction, c.email].filter(Boolean).join(' · ');
+  [c.jobtitle || c.jobfunction, c.email !== c.name ? c.email : ''].filter(Boolean).join(' · ');
 
 export const ContactSummary = ({ lang, c }: { lang: Lang; c: Contact }) => {
   const t = T[lang];
